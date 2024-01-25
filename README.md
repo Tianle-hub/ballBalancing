@@ -1,1 +1,1 @@
-catkin build -DTUM_ICS_USE_QT5=1
+./build.sh
