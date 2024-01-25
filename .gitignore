@@ -1,0 +1,12 @@
+.vscode
+.catkin_tools
+.catkin_workspace
+.editorconfig
+*.pyc
+bags
+bag
+install
+build
+devel
+logs
+core
