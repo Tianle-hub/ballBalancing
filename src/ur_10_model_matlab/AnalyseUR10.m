@@ -110,7 +110,7 @@ tic
 % Inertial matrix
 M = sym(zeros(n, n));
 for i=1:n
-    M = M + m(i) * Jcm_0(1:3,:,i).' * Jcm_0(1:3,:,i) + Jcm_0(4:6,:,i).' * Hcm_stack(1:3,1:3,i) * I(i) * Hcm_stack(1:3,1:3,i).' * Jcm_0(4:6,:,i);
+    M = M + m(i) * Jcm_0(1:3,:,i).' * Jcm_0(1:3,:,i) + Jcm_0(4:6,:,i).' * Hcm_stack(1:3,1:3,i) * I(:,:,i) * Hcm_stack(1:3,1:3,i).' * Jcm_0(4:6,:,i);
 end
 
 % parallel computing for speed up 
