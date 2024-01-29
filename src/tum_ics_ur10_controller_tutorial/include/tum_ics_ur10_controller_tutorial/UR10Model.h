@@ -14,12 +14,12 @@ namespace tum_ics_ur_robot_lli
     {
       Vector6d l;
       Vector6d m;
-      Eigen::Matrix<double, 2, 3> I0;
-      Eigen::Matrix<double, 2, 3> I1;
-      Eigen::Matrix<double, 2, 3> I2;
-      Eigen::Matrix<double, 2, 3> I3;
-      Eigen::Matrix<double, 2, 3> I4;
-      Eigen::Matrix<double, 2, 3> I5;
+      Vector6d I0;
+      Vector6d I1;
+      Vector6d I2;
+      Vector6d I3;
+      Vector6d I4;
+      Vector6d I5;
       Vector3d tcm0;
       Vector3d tcm1;
       Vector3d tcm2;
@@ -43,7 +43,11 @@ namespace tum_ics_ur_robot_lli
 
         std::vector<Matrix4d> H_0_;
 
+        std::vector<Matrix4d> Hcm_0_;
+
         std::vector<Matrix6d> J_0_;
+
+        double g;
 
       public:
         UR10Model();
@@ -56,6 +60,8 @@ namespace tum_ics_ur_robot_lli
 
         std::vector<Matrix4d> computeForwardKinematics();
 
+        std::vector<Matrix4d> computeFKCoMs();
+
         void computeJacobian();
 
         void computeDynamic();
@@ -64,7 +70,7 @@ namespace tum_ics_ur_robot_lli
 
         void computeCoriolisMatrix();
 
-        void computeGeneralizedGravity();
+        Vector6d computeGeneralizedGravity();
 
         void computeAllTerms();
 
@@ -80,6 +86,18 @@ namespace tum_ics_ur_robot_lli
         void computeFKJoint4();
 
         void computeFKJoint5();
+
+        void computeFKCoM0();
+
+        void computeFKCoM1();
+
+        void computeFKCoM2();
+
+        void computeFKCoM3();
+
+        void computeFKCoM4();
+
+        void computeFKCoM5();
 
       
 
