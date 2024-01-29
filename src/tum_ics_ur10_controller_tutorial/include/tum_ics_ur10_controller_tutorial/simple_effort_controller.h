@@ -56,7 +56,7 @@ namespace tum_ics_ur_robot_lli
 
       bool stop();
 
-      bool pubDH(const JointState &state);
+      bool pubDH();
     };
 
   } // namespace RobotControllers
