@@ -2,6 +2,7 @@
 #define UR_ROBOT_LLI_SIMPLEEFFORTCONTROL_H
 
 #include <tum_ics_ur_robot_lli/RobotControllers/ControlEffort.h>
+#include <tf/transform_broadcaster.h>
 
 namespace tum_ics_ur_robot_lli
 {
@@ -20,6 +21,7 @@ namespace tum_ics_ur_robot_lli
 
       ros::NodeHandle nh_;
       ros::Publisher control_data_pub_;
+      tf::TransformBroadcaster dh_br;
 
       Matrix6d Kp_;
       Matrix6d Kd_;
@@ -50,6 +52,8 @@ namespace tum_ics_ur_robot_lli
       Vector6d update(const RobotTime &time, const JointState &state);
 
       bool stop();
+
+      bool pubDH(const JointState &state);
     };
 
   } // namespace RobotControllers
