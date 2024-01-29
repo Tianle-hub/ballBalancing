@@ -80,6 +80,7 @@ file(GLOB_RECURSE MY_CTRL_INC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLIN
 
 add_library(my_robot_control_lli
    src/simple_effort_controller.cpp
+   src/UR10Model.cpp
    ${MY_CTRL_INC}
 )
 target_link_libraries(my_robot_control_lli
