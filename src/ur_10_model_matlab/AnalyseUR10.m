@@ -206,7 +206,7 @@ tic
 % eqns = simplify(M*qpp + C*qp + G);
 eqns = sym(zeros(n,1));
 parfor i=1:n
-    eqns(i) = simplify(M(i,:)*qpp + C(i,:)*qp + G(i,1));
+    eqns(i) = expand(M(i,:)*qpp + C(i,:)*qp + G(i,1));
 end
 toc
 fprintf('computing regressor\n');
