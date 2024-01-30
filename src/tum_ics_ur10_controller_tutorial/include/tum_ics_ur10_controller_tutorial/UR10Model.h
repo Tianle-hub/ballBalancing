@@ -14,18 +14,8 @@ namespace tum_ics_ur_robot_lli
     {
       Vector6d l;
       Vector6d m;
-      Vector6d I0;
-      Vector6d I1;
-      Vector6d I2;
-      Vector6d I3;
-      Vector6d I4;
-      Vector6d I5;
-      Vector3d tcm0;
-      Vector3d tcm1;
-      Vector3d tcm2;
-      Vector3d tcm3;
-      Vector3d tcm4;
-      Vector3d tcm5;
+      Matrix6d I;
+      Eigen::Matrix<double,6,3> tcm;
     };
 
     class UR10Model
@@ -33,6 +23,8 @@ namespace tum_ics_ur_robot_lli
       public:
 
       private:
+        int DOF;
+
         JointState state_;
 
         UR10Parameters ps_;
@@ -43,11 +35,19 @@ namespace tum_ics_ur_robot_lli
 
         std::vector<Matrix4d> H_0_;
 
+        std::vector<Matrix4d> Hr_;
+
         std::vector<Matrix4d> Hcm_0_;
 
         std::vector<Matrix6d> J_0_;
 
+        Matrix6d Jef_0_;
+
         double g;
+
+        Vector6d d;
+        Vector6d a;
+        Vector6d alpha;
 
       public:
         UR10Model();
@@ -71,6 +71,8 @@ namespace tum_ics_ur_robot_lli
         void computeCoriolisMatrix();
 
         Vector6d computeGeneralizedGravity();
+
+        Matrix6d computeEEJacobian();
 
         void computeAllTerms();
 
@@ -99,7 +101,13 @@ namespace tum_ics_ur_robot_lli
 
         void computeFKCoM5();
 
-      
+        Matrix4d relativeTrans(const double theta, const double d, const double a, const double alpha);
+
+        Matrix3d rotX(const double alphaX);
+
+        Matrix3d rotY(const double betaY);
+
+        Matrix3d rotZ(const double gammaZ);
 
     };
 

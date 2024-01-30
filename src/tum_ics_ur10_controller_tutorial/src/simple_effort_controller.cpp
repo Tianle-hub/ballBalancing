@@ -168,9 +168,13 @@ namespace tum_ics_ur_robot_lli
 
       model_.updateJointState(state);
       Vector6d G = model_.computeGeneralizedGravity();
-      ROS_INFO_STREAM("tau\n" << tau);
-      ROS_INFO_STREAM("G\n" << G);
-      tau = tau + G;
+      Matrix6d J = model_.computeEEJacobian();
+
+      Vector6d Vef = J * state.qp;
+      // ROS_INFO_STREAM("tau\n" << tau);
+      // ROS_INFO_STREAM("G\n" << G);
+      ROS_INFO_STREAM("Vef\n" << Vef);
+      tau = tau;
       pubDH();
       // ROS_WARN_STREAM("tau=" << tau.transpose());
       return tau;
@@ -200,7 +204,7 @@ namespace tum_ics_ur_robot_lli
       transform.setOrigin(tf::Vector3(0, 0, 0));
       q.setRPY(0,0,3.1415926);
       transform.setRotation(q);
-      dh_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "dh_base_link"));
+      dh_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "dh_joint_0"));
 
       for (int i = 0; i < STD_DOF; ++i)
       {
@@ -210,10 +214,8 @@ namespace tum_ics_ur_robot_lli
 
         transform.setOrigin(tf::Vector3(H(0,3), H(1,3), H(2,3)));
         transform.setRotation(q);
-
-        std::string s = std::to_string(i);
         
-        dh_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_base_link", "dh_joint_" + s));
+        dh_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_0", "dh_joint_" + std::to_string(i+1)));
       } 
 
       std::vector<Matrix4d> Hcm_stack = model_.computeFKCoMs();
@@ -225,10 +227,8 @@ namespace tum_ics_ur_robot_lli
 
         transform.setOrigin(tf::Vector3(H(0,3), H(1,3), H(2,3)));
         transform.setRotation(q);
-
-        std::string s = std::to_string(i);
         
-        dh_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_base_link", "dh_com_" + s));
+        dh_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_0", "dh_com_" + std::to_string(i)));
       } 
 
       return true;
