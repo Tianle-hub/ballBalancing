@@ -10,14 +10,6 @@ namespace tum_ics_ur_robot_lli
 {
   namespace ur10_model
   {
-    struct UR10Parameters
-    {
-      Vector6d l;
-      Vector6d m;
-      Matrix6d I;
-      Eigen::Matrix<double,6,3> tcm;
-    };
-
     class UR10Model
     {
       public:
@@ -27,11 +19,18 @@ namespace tum_ics_ur_robot_lli
 
         JointState state_;
 
-        UR10Parameters ps_;
+        Vector6d l;
+        Vector6d m;
+        Matrix6d I;
+        Eigen::Matrix<double,6,3> tcm;
 
         Matrix6d M_;
         Matrix6d C_;
         Vector6d G_;
+
+        Eigen::Matrix<double,167,1> Theta_;
+
+        Eigen::Matrix<double,6,167> Y_;
 
         std::vector<Matrix4d> H_0_;
 
@@ -58,7 +57,7 @@ namespace tum_ics_ur_robot_lli
 
         void updateJointState(const JointState &state_new);
 
-        std::vector<Matrix4d> computeForwardKinematics();
+        std::vector<Matrix4d> computeForwardKinematics(const Vector6d &q);
 
         std::vector<Matrix4d> computeFKCoMs();
 
@@ -70,24 +69,30 @@ namespace tum_ics_ur_robot_lli
 
         void computeCoriolisMatrix();
 
-        Vector6d computeGeneralizedGravity();
+        Vector6d computeGeneralizedGravity(const Vector6d &q);
 
-        Matrix6d computeEEJacobian();
+        Matrix6d computeEEJacobian(const Vector6d &q);
+
+        Vector6d computeEEPose(const Vector6d &q);
 
         void computeAllTerms();
 
+        void initTheta();
+
+        Eigen::Matrix<double,6,167> computeRegressor(const Vector6d &q);
+
       private:
-        void computeFKJoint0();
+        Matrix4d computeFKJoint0(const Vector6d &q);
 
-        void computeFKJoint1();
+        Matrix4d computeFKJoint1(const Vector6d &q);
 
-        void computeFKJoint2();
+        Matrix4d computeFKJoint2(const Vector6d &q);
 
-        void computeFKJoint3();
+        Matrix4d computeFKJoint3(const Vector6d &q);
 
-        void computeFKJoint4();
+        Matrix4d computeFKJoint4(const Vector6d &q);
 
-        void computeFKJoint5();
+        Matrix4d computeFKJoint5(const Vector6d &q);
 
         void computeFKCoM0();
 

@@ -56,7 +56,7 @@ namespace tum_ics_ur_robot_lli
 
       bool stop();
 
-      bool pubDH();
+      bool pubDH(const std::vector<Matrix4d> &H_stack);
     };
 
   } // namespace RobotControllers

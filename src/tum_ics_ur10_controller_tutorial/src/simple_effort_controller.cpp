@@ -1,6 +1,6 @@
 #include <tum_ics_ur10_controller_tutorial/simple_effort_controller.h>
-
 #include <tum_ics_ur_robot_msgs/ControlData.h>
+#include <chrono>
 
 namespace tum_ics_ur_robot_lli
 {
@@ -117,6 +117,7 @@ namespace tum_ics_ur_robot_lli
 
     Vector6d SimpleEffortControl::update(const RobotTime &time, const JointState &state)
     {
+      auto start = std::chrono::high_resolution_clock::now();
       if (is_first_iter_)
       {
         q_start_ = state.q;
@@ -146,6 +147,10 @@ namespace tum_ics_ur_robot_lli
       Vector6d Sq = state.qp - js_r.qp;
       tau = -Kd_ * Sq;
 
+      Vector6d Xef = model_.computeEEPose(state.q);
+      Matrix6d J = model_.computeEEJacobian(state.q);
+      Vector6d Xefp = J * state.qp;
+
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
       msg.header.stamp = ros::Time::now();
@@ -162,21 +167,25 @@ namespace tum_ics_ur_robot_lli
         msg.Dq[i] = delta_q_(i);
         msg.Dqp[i] = delta_qp_(i);
 
+        msg.Xef_0[i] = Xef(i);
+        msg.Xefp_0[i] = Xefp(i);
+
         msg.torques[i] = state.tau(i);
       }
       control_data_pub_.publish(msg);
 
       model_.updateJointState(state);
-      Vector6d G = model_.computeGeneralizedGravity();
-      Matrix6d J = model_.computeEEJacobian();
-
-      Vector6d Vef = J * state.qp;
+      Vector6d G = model_.computeGeneralizedGravity(state.q);
+      std::vector<Matrix4d> H_stack = model_.computeForwardKinematics(state.q);
+      
       // ROS_INFO_STREAM("tau\n" << tau);
       // ROS_INFO_STREAM("G\n" << G);
-      ROS_INFO_STREAM("Vef\n" << Vef);
       tau = tau;
-      pubDH();
+      pubDH(H_stack);
       // ROS_WARN_STREAM("tau=" << tau.transpose());
+      auto stop = std::chrono::high_resolution_clock::now();
+      auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+      std::cout << duration.count() << std::endl;
       return tau;
     }
 
@@ -185,14 +194,12 @@ namespace tum_ics_ur_robot_lli
       return true;
     }
 
-    bool SimpleEffortControl::pubDH()
+    bool SimpleEffortControl::pubDH(const std::vector<Matrix4d> &H_stack)
     {
       tf::Transform transform;
       tf::Quaternion q;
       Eigen::Quaterniond q_eigen;
       Matrix4d H;
-
-      std::vector<Matrix4d> H_stack = model_.computeForwardKinematics();
 
       // base_link
       transform.setOrigin(tf::Vector3(0, 0, 0));
