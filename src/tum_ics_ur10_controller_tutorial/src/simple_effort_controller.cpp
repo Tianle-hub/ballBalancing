@@ -183,9 +183,11 @@ namespace tum_ics_ur_robot_lli
       tau = tau;
       pubDH(H_stack);
       // ROS_WARN_STREAM("tau=" << tau.transpose());
+
       auto stop = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
       std::cout << duration.count() << std::endl;
+
       return tau;
     }
 

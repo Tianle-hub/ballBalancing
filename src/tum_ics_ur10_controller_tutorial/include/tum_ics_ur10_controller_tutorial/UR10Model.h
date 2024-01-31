@@ -73,13 +73,17 @@ namespace tum_ics_ur_robot_lli
 
         Matrix6d computeEEJacobian(const Vector6d &q);
 
+        Matrix6d computeEEJacobainDerivative(const Vector6d &q, const Vector6d &qp);
+
         Vector6d computeEEPose(const Vector6d &q);
 
         void computeAllTerms();
 
         void initTheta();
 
-        Eigen::Matrix<double,6,167> computeRegressor(const Vector6d &q);
+        Eigen::Matrix<double,6,167> computeRefRegressor(const Vector6d &q, const Vector6d &qp, const Vector6d &qpr, const Vector6d &qppr);
+
+        void updateTheta(const Vector6d &q, const Vector6d &qp, const Vector6d &qpr, const Vector6d &qppr, const Vector6d &Sq);
 
       private:
         Matrix4d computeFKJoint0(const Vector6d &q);
