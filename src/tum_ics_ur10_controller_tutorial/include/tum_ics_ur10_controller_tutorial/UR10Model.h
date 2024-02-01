@@ -48,6 +48,8 @@ namespace tum_ics_ur_robot_lli
         Vector6d a;
         Vector6d alpha;
 
+        Eigen::MatrixXd Gamma_inv_;
+
       public:
         UR10Model();
 
@@ -84,6 +86,11 @@ namespace tum_ics_ur_robot_lli
         Eigen::Matrix<double,6,167> computeRefRegressor(const Vector6d &q, const Vector6d &qp, const Vector6d &qpr, const Vector6d &qppr);
 
         void updateTheta(const Vector6d &q, const Vector6d &qp, const Vector6d &qpr, const Vector6d &qppr, const Vector6d &Sq);
+
+        Eigen::Matrix<double,167,1> getTheta()
+        {
+          return Theta_;
+        }
 
       private:
         Matrix4d computeFKJoint0(const Vector6d &q);

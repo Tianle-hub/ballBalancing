@@ -174,15 +174,20 @@ namespace tum_ics_ur_robot_lli
       }
       control_data_pub_.publish(msg);
 
-      model_.updateJointState(state);
       Vector6d G = model_.computeGeneralizedGravity(state.q);
       std::vector<Matrix4d> H_stack = model_.computeForwardKinematics(state.q);
-      
+      Vector6d qpr = Vector6d::Zero();
+      Vector6d qppr = Vector6d::Zero();
+      model_.updateJointState(state);
+      auto Yr = model_.computeRefRegressor(state.q, state.qp, js_r.qp, js_r.qpp);
+      auto Theta = model_.getTheta();
+      // model_.updateTheta(state.q, state.qp, js_r.qp, js_r.qpp, Sq);
       // ROS_INFO_STREAM("tau\n" << tau);
       // ROS_INFO_STREAM("G\n" << G);
-      tau = tau;
+      // ROS_INFO_STREAM("Yr*Theta\n" << Yr*Theta);
       pubDH(H_stack);
-      // ROS_WARN_STREAM("tau=" << tau.transpose());
+
+      tau = tau + Yr*Theta;
 
       auto stop = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
