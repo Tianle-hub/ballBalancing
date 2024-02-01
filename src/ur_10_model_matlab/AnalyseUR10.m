@@ -1,6 +1,8 @@
 syms q1 q2 q3 q4 q5 q6 real
 syms qp1 qp2 qp3 qp4 qp5 qp6 real
 syms qpp1 qpp2 qpp3 qpp4 qpp5 qpp6 real
+syms qpr1 qpr2 qpr3 qpr4 qpr5 qpr6 real
+syms qppr1 qppr2 qppr3 qppr4 qppr5 qppr6 real
 syms d1 a2 a3 d4 d5 d6 real
 syms tcm11 tcm12 tcm13 tcm21 tcm22 tcm23 real
 syms tcm31 tcm32 tcm33 tcm41 tcm42 tcm43 real
@@ -16,6 +18,8 @@ syms I611 I612 I613 I622 I623 I633 real
 q = [q1; q2; q3; q4; q5; q6];
 qp = [qp1; qp2; qp3; qp4; qp5; qp6];
 qpp = [qpp1; qpp2; qpp3; qpp4; qpp5; qpp6];
+qpr = [qpr1; qpr2; qpr3; qpr4; qpr5; qpr6];
+qppr = [qppr1; qppr2; qppr3; qppr4; qppr5; qppr6];
 
 I(:,:,1) = [I111, I112, I113; I112, I122, I123; I113, I123, I133];
 I(:,:,2) = [I211, I212, I213; I212, I222, I223; I213, I223, I233];
@@ -206,7 +210,7 @@ tic
 % eqns = simplify(M*qpp + C*qp + G);
 eqns = sym(zeros(n,1));
 parfor i=1:n
-    eqns(i) = expand(M(i,:)*qpp + C(i,:)*qp + G(i,1));
+    eqns(i) = expand(M(i,:)*qppr + C(i,:)*qpr + G(i,1));
 end
 toc
 fprintf('computing regressor\n');
@@ -234,14 +238,20 @@ end
 % combine similar terms 
 Theta = unique(Theta_tmp);
 m = length(Theta);
-Y = sym(zeros(n, m));
+Yr = sym(zeros(n, m));
 for i=1:m
     index = ismember(Theta_tmp, Theta(i));
     for j=1:n
-        Y(j, i) = Y_tmp(j,:)*index;
+        Yr(j, i) = Y_tmp(j,:)*index;
+    end
+end
+
+for i=1:n
+    parfor j=1:167
+        Yr(i,j) = simplify(Yr(i,j));
     end
 end
 
 % verify
-err = simplify(eqns - Y*Theta)
+err = simplify(eqns - Yr*Theta)
 toc
