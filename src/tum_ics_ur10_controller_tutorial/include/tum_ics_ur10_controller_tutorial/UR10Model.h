@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 #include <eigen3/Eigen/Dense>
 #include <tum_ics_ur_robot_lli/JointState.h>
+#include <tumtools/Math/MathTools.h>
 
 namespace tum_ics_ur_robot_lli
 {
@@ -24,8 +25,6 @@ namespace tum_ics_ur_robot_lli
         Matrix6d I;
         Eigen::Matrix<double,6,3> tcm;
 
-        Matrix6d M_;
-        Matrix6d C_;
         Vector6d G_;
 
         Eigen::Matrix<double,167,1> Theta_;
@@ -48,7 +47,7 @@ namespace tum_ics_ur_robot_lli
         Vector6d a;
         Vector6d alpha;
 
-        Eigen::MatrixXd Gamma_inv_;
+        Eigen::DiagonalMatrix<double,167> Gamma_inv_;
 
       public:
         UR10Model();
@@ -64,12 +63,6 @@ namespace tum_ics_ur_robot_lli
         std::vector<Matrix4d> computeFKCoMs();
 
         void computeJacobian();
-
-        void computeDynamic();
-
-        void computeInertialMatrix();
-
-        void computeCoriolisMatrix();
 
         Vector6d computeGeneralizedGravity(const Vector6d &q);
 

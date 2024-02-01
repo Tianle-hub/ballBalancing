@@ -117,7 +117,7 @@ namespace tum_ics_ur_robot_lli
 
     Vector6d SimpleEffortControl::update(const RobotTime &time, const JointState &state)
     {
-      auto start = std::chrono::high_resolution_clock::now();
+      // auto start = std::chrono::high_resolution_clock::now();
       if (is_first_iter_)
       {
         q_start_ = state.q;
@@ -146,10 +146,27 @@ namespace tum_ics_ur_robot_lli
       // torque
       Vector6d Sq = state.qp - js_r.qp;
       tau = -Kd_ * Sq;
+      // // Cartesian space
+      // Vector6d x_start;
+      // Vector6d x_goal;
 
-      Vector6d Xef = model_.computeEEPose(state.q);
-      Matrix6d J = model_.computeEEJacobian(state.q);
-      Vector6d Xefp = J * state.qp;
+      // x_start << 0, 0.25614, 1.4273, 0, 0, M_PI/2;
+      // x_goal << 1.1843, 0.25614, 0.0116, -M_PI, 0, -M_PI/2;
+
+      // VVector6d vXd;
+      // vXd = getSpline5<VVector6d, Vector6d>(x_start, x_goal, time.tD(), spline_period_);
+
+      // Vector6d Xef = model_.computeEEPose(state.q);
+      // Matrix6d J = model_.computeEEJacobian(state.q);
+      // Vector6d Xefp = J * state.qp;
+
+      // Vector6d delta_x = Xef - vXd[0];
+      // Vector6d delta_xd = Xefp - vXd[1];
+      
+      // Vector6d xpr = vXd[1] - Kp_ * delta_x;
+      // Vector6d xppr = vXd[2] - Kp_ * delta_xd;
+
+      // Vector6d Sx = Xefp - xpr;
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
@@ -167,10 +184,15 @@ namespace tum_ics_ur_robot_lli
         msg.Dq[i] = delta_q_(i);
         msg.Dqp[i] = delta_qp_(i);
 
-        msg.Xef_0[i] = Xef(i);
-        msg.Xefp_0[i] = Xefp(i);
+        // msg.Xef_0[i] = Xef(i);
+        // msg.Xefp_0[i] = Xefp(i);
+
+        // msg.Xd_0[i] = vXd[0](i);
+        // msg.Xdp_0[i] = vXd[1](i);
 
         msg.torques[i] = state.tau(i);
+
+        msg.DX[i] = Sq[i];
       }
       control_data_pub_.publish(msg);
 
@@ -181,17 +203,15 @@ namespace tum_ics_ur_robot_lli
       model_.updateJointState(state);
       auto Yr = model_.computeRefRegressor(state.q, state.qp, js_r.qp, js_r.qpp);
       auto Theta = model_.getTheta();
-      // model_.updateTheta(state.q, state.qp, js_r.qp, js_r.qpp, Sq);
-      // ROS_INFO_STREAM("tau\n" << tau);
-      // ROS_INFO_STREAM("G\n" << G);
-      // ROS_INFO_STREAM("Yr*Theta\n" << Yr*Theta);
+      model_.updateTheta(state.q, state.qp, js_r.qp, js_r.qpp, Sq);
+
       pubDH(H_stack);
 
       tau = tau + Yr*Theta;
 
-      auto stop = std::chrono::high_resolution_clock::now();
-      auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-      std::cout << duration.count() << std::endl;
+      // auto stop = std::chrono::high_resolution_clock::now();
+      // auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+      // std::cout << duration.count() << std::endl;
 
       return tau;
     }
