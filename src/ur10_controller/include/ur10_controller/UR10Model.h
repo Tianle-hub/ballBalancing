@@ -17,36 +17,36 @@ namespace tum_ics_ur_robot_lli
 
       private:
         int DOF;
+        double g;
 
         JointState state_;
 
+        // kinematic and dynamic parameters
         Vector6d l;
         Vector6d m;
         Matrix6d I;
         Eigen::Matrix<double,6,3> tcm;
-
-        Vector6d G_;
-
         Eigen::Matrix<double,167,1> Theta_;
-
         Eigen::Matrix<double,6,167> Y_;
 
-        std::vector<Matrix4d> H_0_;
-
-        std::vector<Matrix4d> Hr_;
-
-        std::vector<Matrix4d> Hcm_0_;
-
-        std::vector<Matrix6d> J_0_;
-
-        Matrix6d Jef_0_;
-
-        double g;
-
+        // DH
         Vector6d d;
         Vector6d a;
         Vector6d alpha;
 
+        // generized gravity
+        Vector6d G_;
+
+        // transformation stacks
+        std::vector<Matrix4d> H_0_;
+        std::vector<Matrix4d> Hcm_0_;
+        // std::vector<Matrix4d> Hr_;
+
+        // jacobians
+        std::vector<Matrix6d> J_0_;
+        Matrix6d Jef_0_;
+
+        // for adaptive control
         Eigen::DiagonalMatrix<double,167> Gamma_inv_;
 
       public:
@@ -54,15 +54,19 @@ namespace tum_ics_ur_robot_lli
 
         ~UR10Model();
 
-        void initModel(const JointState &state_init, const int n);
+        void initModel();
+
+        void initTheta();
 
         void updateJointState(const JointState &state_new);
 
+        void computeJacobian();
+
+        void computeAllTerms();
+
         std::vector<Matrix4d> computeForwardKinematics(const Vector6d &q);
 
-        std::vector<Matrix4d> computeFKCoMs();
-
-        void computeJacobian();
+        std::vector<Matrix4d> computeFKCoMs(const Vector6d &q);
 
         Vector6d computeGeneralizedGravity(const Vector6d &q);
 
@@ -72,18 +76,11 @@ namespace tum_ics_ur_robot_lli
 
         Matrix4d computeEEPos(const Vector6d &q);
 
-        void computeAllTerms();
-
-        void initTheta();
-
         Eigen::Matrix<double,6,167> computeRefRegressor(const Vector6d &q, const Vector6d &qp, const Vector6d &qpr, const Vector6d &qppr);
 
         void updateTheta(const Vector6d &q, const Vector6d &qp, const Vector6d &qpr, const Vector6d &qppr, const Vector6d &Sq);
 
-        Eigen::Matrix<double,167,1> getTheta()
-        {
-          return Theta_;
-        }
+        Eigen::Matrix<double,167,1> getTheta(){ return Theta_;}
 
       private:
         Matrix4d computeFKJoint0(const Vector6d &q);

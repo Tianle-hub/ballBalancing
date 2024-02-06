@@ -19,6 +19,7 @@ namespace tum_ics_ur_robot_lli
       delta_qp_(Vector6d::Zero())
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
+      model_.initModel();
     }
 
     SimpleEffortControl::~SimpleEffortControl()
@@ -31,8 +32,7 @@ namespace tum_ics_ur_robot_lli
     }
     void SimpleEffortControl::setQHome(const JointState &q_home)
     {
-      q_home_ = q_home;
-      model_.initModel(q_home, 6);
+      q_home_ = q_home;model_.initModel();
     }
     void SimpleEffortControl::setQPark(const JointState &q_park)
     {
@@ -133,13 +133,7 @@ namespace tum_ics_ur_robot_lli
       VVector6d vQd;
       vQd = getJointPVT5(q_start_, q_goal_, time.tD(), spline_period_);
       Vector6d q_goal_2;
-      // q_goal_2 << 0, -60, 60, -90, 90, 0;
-      // q_goal_2 = DEG2RAD(q_goal_2);
-      // if (time.tD() > 10.0)
-      // {
-      //   vQd = getJointPVT5(q_goal_, q_goal_2, time.tD()-10.0, spline_period_);
-      // }
-      // erros
+
       delta_q_ = state.q - vQd[0];
       delta_qp_ = state.qp - vQd[1];
 
@@ -152,6 +146,7 @@ namespace tum_ics_ur_robot_lli
       // torque
       Vector6d Sq = state.qp - js_r.qp;
       tau = -Kd_ * Sq;
+
       // Cartesian space
       if (time.tD() > 10.)
       {
@@ -161,6 +156,7 @@ namespace tum_ics_ur_robot_lli
         x_goal_t = T0_W.inverse() * x_goal_t;
 
         Eigen::Quaterniond x_goal_r(0.71, 0, 0, 0.71);
+        // Matrix3d x_goal_rm = AngleAxisd(-M_PI/2, Vector3d::UnitZ()).matrix() * T0_W.inverse() * x_goal_r.toRotationMatrix();
         Matrix3d x_goal_rm = T0_W.inverse() * x_goal_r.toRotationMatrix();
         Vector6d delta_x;
 
@@ -179,7 +175,7 @@ namespace tum_ics_ur_robot_lli
         Vector6d Xefp = J * state.qp;
         Vector6d Sx = Xefp - xpr;
         Sq = J.inverse() * Sx;
-        tau = - 1 * Kd_ * Sq;
+        tau = - 0.5 * Kd_ * Sq;
       }
 
 
@@ -213,14 +209,16 @@ namespace tum_ics_ur_robot_lli
 
       Vector6d G = model_.computeGeneralizedGravity(state.q);
       std::vector<Matrix4d> H_stack = model_.computeForwardKinematics(state.q);
+      std::vector<Matrix4d> Hcm_stack = model_.computeFKCoMs(state.q);
+
+      pubDH(H_stack, Hcm_stack);
+
       Vector6d qpr = Vector6d::Zero();
       Vector6d qppr = Vector6d::Zero();
       model_.updateJointState(state);
       auto Yr = model_.computeRefRegressor(state.q, state.qp, js_r.qp, js_r.qpp);
       auto Theta = model_.getTheta();
       model_.updateTheta(state.q, state.qp, js_r.qp, js_r.qpp, Sq);
-
-      pubDH(H_stack);
 
       tau = tau + Yr*Theta;
 
@@ -236,7 +234,7 @@ namespace tum_ics_ur_robot_lli
       return true;
     }
 
-    bool SimpleEffortControl::pubDH(const std::vector<Matrix4d> &H_stack)
+    bool SimpleEffortControl::pubDH(const std::vector<Matrix4d> &H_stack, const std::vector<Matrix4d> &Hcm_stack)
     {
       tf::Transform transform;
       tf::Quaternion q;
@@ -267,7 +265,6 @@ namespace tum_ics_ur_robot_lli
         dh_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_0", "dh_joint_" + std::to_string(i+1)));
       } 
 
-      std::vector<Matrix4d> Hcm_stack = model_.computeFKCoMs();
       for (int i = 0; i < STD_DOF; ++i)
       {
         H = Hcm_stack[i];

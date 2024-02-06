@@ -12,14 +12,13 @@ namespace tum_ics_ur_robot_lli
     {
     }
 
-    void UR10Model::initModel(const JointState &state_init, const int n)
+    void UR10Model::initModel()
     {
       // TODO: put parameters in yaml 
-      DOF = n;
-      H_0_.resize(n);
-      Hr_.resize(n);
-      Hcm_0_.resize(n);
-      J_0_.resize(n);
+      H_0_.resize(STD_DOF);
+      // Hr_.resize(STD_DOF);
+      Hcm_0_.resize(STD_DOF);
+      J_0_.resize(STD_DOF);
       l << 0.1273, -0.612, -0.5723, 0.163941, 0.1157, 0.0922;
       m << 7.1, 12.7, 4.27, 2, 2, 0.365;
       // m << 7.778, 12.93, 3.87, 1.96, 1.96, 0.202;
@@ -52,7 +51,7 @@ namespace tum_ics_ur_robot_lli
     {
       H_0_[0] = relativeTrans(q(0), d(0), a(0), alpha(0));
 
-      for(int i = 1; i < DOF; ++i)
+      for(int i = 1; i < STD_DOF; ++i)
       {
         H_0_[i] = H_0_[i-1] * relativeTrans(q(i), d(i), a(i), alpha(i));
       }
@@ -68,8 +67,10 @@ namespace tum_ics_ur_robot_lli
       Theta_ = Theta_  - Gamma_inv_ * Yr.transpose() * I * Sq * 0.002;
     }
 
-    std::vector<Matrix4d> UR10Model::computeFKCoMs()
+    std::vector<Matrix4d> UR10Model::computeFKCoMs(const Vector6d &q)
     {
+      computeForwardKinematics(q);
+      
       UR10Model::computeFKCoM0();
       UR10Model::computeFKCoM1();
       UR10Model::computeFKCoM2();
@@ -87,7 +88,7 @@ namespace tum_ics_ur_robot_lli
       Eigen::Matrix<double,3,6> z_0;
       z_0.block<3,1>(0,0) << 0, 0, 1;
 
-      for (int i = 1; i < DOF; ++i)
+      for (int i = 1; i < STD_DOF; ++i)
       {
         z_0.block<3,1>(0,i) = H_0_[i-1].block<3,3>(0,0) * z;
       }
@@ -95,7 +96,7 @@ namespace tum_ics_ur_robot_lli
       Eigen::Matrix<double,3,7> t_0;
       t_0.block<3,1>(0,0) << 0, 0, 0;
 
-      for (int i = 0; i < DOF; ++i)
+      for (int i = 0; i < STD_DOF; ++i)
       {
         z_0.block<3,1>(0,i+1) = H_0_[i].block<3,1>(0,3);
       }
@@ -489,7 +490,7 @@ namespace tum_ics_ur_robot_lli
 //                 0,        0, 1, l(5),
 //                 0,        0, 0,  1;
 // H_0_[0] = Hr_[0];
-// for (int i = 1; i < DOF; ++i)
+// for (int i = 1; i < STD_DOF; ++i)
 // {
 //   H_0_[i] = H_0_[i-1] * Hr_[i];
 // }

@@ -9,7 +9,12 @@ namespace tum_ics_ur_robot_lli
 {
   namespace RobotControllers
   {
-
+    enum ControllerType
+    {
+      JOINTPD,
+      CARTESIANPD
+    };
+    
     class SimpleEffortControl : public ControlEffort
     {
     private:
@@ -52,11 +57,12 @@ namespace tum_ics_ur_robot_lli
 
       bool start();
 
-      Vector6d update(const RobotTime &time, const JointState &state);
-
       bool stop();
 
-      bool pubDH(const std::vector<Matrix4d> &H_stack);
+      bool pubDH(const std::vector<Matrix4d> &H_stack, const std::vector<Matrix4d> &Hcm_stack);
+
+      Vector6d update(const RobotTime &time, const JointState &state);
+
     };
 
   } // namespace RobotControllers
