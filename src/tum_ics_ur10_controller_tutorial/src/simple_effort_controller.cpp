@@ -132,7 +132,13 @@ namespace tum_ics_ur_robot_lli
       // poly spline
       VVector6d vQd;
       vQd = getJointPVT5(q_start_, q_goal_, time.tD(), spline_period_);
-
+      Vector6d q_goal_2;
+      // q_goal_2 << 0, -60, 60, -90, 90, 0;
+      // q_goal_2 = DEG2RAD(q_goal_2);
+      // if (time.tD() > 10.0)
+      // {
+      //   vQd = getJointPVT5(q_goal_, q_goal_2, time.tD()-10.0, spline_period_);
+      // }
       // erros
       delta_q_ = state.q - vQd[0];
       delta_qp_ = state.qp - vQd[1];
@@ -147,26 +153,38 @@ namespace tum_ics_ur_robot_lli
       Vector6d Sq = state.qp - js_r.qp;
       tau = -Kd_ * Sq;
       // // Cartesian space
-      // Vector6d x_start;
-      // Vector6d x_goal;
+      // if (time.tD() > 10.)
+      // {
+      //   Matrix3d T0_W = AngleAxisd(M_PI, Vector3d::UnitZ()).matrix();
+      //   Vector3d x_goal_t(1.0, 0.164, 0.750);
+      //   x_goal_t = T0_W.inverse() * x_goal_t;
 
-      // x_start << 0, 0.25614, 1.4273, 0, 0, M_PI/2;
-      // x_goal << 1.1843, 0.25614, 0.0116, -M_PI, 0, -M_PI/2;
+      //   Eigen::Quaterniond x_goal_r(0.71, 0, 0, 0.71);
+      //   Matrix3d x_goal_rm = T0_W.inverse() * x_goal_r.toRotationMatrix();
+      //   Vector6d delta_x;
+      //   // Vector6d q;
+      //   // q << 0, -60, 60, -90, 90, 0;
+      //   // q = DEG2RAD(q);
 
-      // VVector6d vXd;
-      // vXd = getSpline5<VVector6d, Vector6d>(x_start, x_goal, time.tD(), spline_period_);
+      //   Matrix4d Xef = model_.computeEEPos(state.q);
+      //   // ROS_INFO_STREAM("Xef: \n" << Xef);
+      //   Matrix3d Xef_rm = Xef.block<3,3>(0,0);
+      //   Vector3d Xef_t = Xef.block<3,1>(0,3);
 
-      // Vector6d Xef = model_.computeEEPose(state.q);
-      // Matrix6d J = model_.computeEEJacobian(state.q);
-      // Vector6d Xefp = J * state.qp;
+      //   Eigen::AngleAxisd delta_x_ra(x_goal_rm * Xef_rm.transpose());
+      //   Vector3d delta_x_r = delta_x_ra.angle() * delta_x_ra.axis();
 
-      // Vector6d delta_x = Xef - vXd[0];
-      // Vector6d delta_xd = Xefp - vXd[1];
-      
-      // Vector6d xpr = vXd[1] - Kp_ * delta_x;
-      // Vector6d xppr = vXd[2] - Kp_ * delta_xd;
+      //   delta_x << Xef_t(0) - x_goal_t(0), Xef_t(1) - x_goal_t(1), Xef_t(2) - x_goal_t(2), -delta_x_r(0), -delta_x_r(1), -delta_x_r(2);
+      //   Vector6d xpr = - delta_x;
 
-      // Vector6d Sx = Xefp - xpr;
+      //   Matrix6d J = model_.computeEEJacobian(state.q);
+
+      //   Vector6d Xefp = J * state.qp;
+      //   Vector6d Sx = Xefp - xpr;
+      //   Sq = J.inverse() * Sx;
+      //   tau = - 1 * Kd_ * Sq;
+      // }
+
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;

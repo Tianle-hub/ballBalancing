@@ -70,7 +70,7 @@ namespace tum_ics_ur_robot_lli
 
         Matrix6d computeEEJacobainDerivative(const Vector6d &q, const Vector6d &qp);
 
-        Vector6d computeEEPose(const Vector6d &q);
+        Matrix4d computeEEPos(const Vector6d &q);
 
         void computeAllTerms();
 

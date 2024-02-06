@@ -40,7 +40,7 @@ namespace tum_ics_ur_robot_lli
       a << 0., l(1), l(2), 0., 0., 0.;
       alpha << M_PI/2, 0., 0., M_PI/2, -M_PI/2, 0;
       initTheta();
-      Gamma_inv_  = 1 * Theta_.asDiagonal();
+      Gamma_inv_  = 0.5 * Theta_.asDiagonal();
     }
 
     void UR10Model::updateJointState(const JointState &state_new)
@@ -63,7 +63,9 @@ namespace tum_ics_ur_robot_lli
     void UR10Model::updateTheta(const Vector6d &q, const Vector6d &qp, const Vector6d &qpr, const Vector6d &qppr, const Vector6d &Sq)
     {
       auto Yr = computeRefRegressor(q, qp, qpr, qppr);
-      Theta_ = Theta_  - Gamma_inv_ * Yr.transpose() * Sq * 0.002;
+      Matrix6d I = Matrix6d::Identity();
+      I(3,3) = -1;
+      Theta_ = Theta_  - Gamma_inv_ * Yr.transpose() * I * Sq * 0.002;
     }
 
     std::vector<Matrix4d> UR10Model::computeFKCoMs()
@@ -261,14 +263,14 @@ namespace tum_ics_ur_robot_lli
     }
 
 
-    Vector6d UR10Model::computeEEPose(const Vector6d &q)
+    Matrix4d UR10Model::computeEEPos(const Vector6d &q)
     {
       Matrix4d H = computeFKJoint5(q);
-      Vector6d X;
-      X << H(0,3), H(1,3), H(2,3);
-      X.block<3,1>(3,0) = H.block<3,3>(0,0).eulerAngles(0,1,2);
+      // Vector6d X;
+      // X << H(0,3), H(1,3), H(2,3);
+      // X.block<3,1>(3,0) = H.block<3,3>(0,0).eulerAngles(0,1,2);
 
-      return X;
+      return H;
     }
 
 
