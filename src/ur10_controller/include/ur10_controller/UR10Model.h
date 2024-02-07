@@ -16,10 +16,11 @@ namespace tum_ics_ur_robot_lli
       public:
 
       private:
-        int DOF;
         double g;
 
         JointState state_;
+
+        Matrix4d T0_W_;
 
         // kinematic and dynamic parameters
         Vector6d l;
@@ -81,6 +82,8 @@ namespace tum_ics_ur_robot_lli
         void updateTheta(const Vector6d &q, const Vector6d &qp, const Vector6d &qpr, const Vector6d &qppr, const Vector6d &Sq);
 
         Eigen::Matrix<double,167,1> getTheta(){ return Theta_;}
+        
+        Matrix4d getTransformBaseToWorld(){ return T0_W_;}
 
       private:
         Matrix4d computeFKJoint0(const Vector6d &q);

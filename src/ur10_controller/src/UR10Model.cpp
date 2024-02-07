@@ -40,6 +40,8 @@ namespace tum_ics_ur_robot_lli
       alpha << M_PI/2, 0., 0., M_PI/2, -M_PI/2, 0;
       initTheta();
       Gamma_inv_  = 0.5 * Theta_.asDiagonal();
+      T0_W_ = Matrix4d::Identity();
+      T0_W_.block<3,3>(0,0) = AngleAxisd(M_PI, Vector3d::UnitZ()).matrix();
     }
 
     void UR10Model::updateJointState(const JointState &state_new)

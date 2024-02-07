@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 
     // create controller
     ROS_INFO_STREAM("Create Controller");
-    tum_ics_ur_robot_lli::RobotControllers::SimpleEffortControl controller(1.0, "SimpleController");
+    tum_ics_ur_robot_lli::RobotControllers::UR10EffortControl controller(1.0, "SimpleController");
 
     //The control must be connected to the robot after the init()-->The dynamic model needs to
     ROS_INFO_STREAM("Add Controller");

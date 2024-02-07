@@ -7,12 +7,15 @@ namespace tum_ics_ur_robot_lli
   namespace RobotControllers
   {
 
-    SimpleEffortControl::SimpleEffortControl(double weight, const QString &name) : 
+    UR10EffortControl::UR10EffortControl(double weight, const QString &name) : 
       ControlEffort(name, SPLINE_TYPE, JOINT_SPACE, weight),
       is_first_iter_(true),
-      Kp_(Matrix6d::Zero()),
-      Kd_(Matrix6d::Zero()),
-      Ki_(Matrix6d::Zero()),
+      Kp_c_(Matrix6d::Zero()),
+      Kd_c_(Matrix6d::Zero()),
+      Ki_c_(Matrix6d::Zero()),
+      Kp_j_(Matrix6d::Zero()),
+      Kd_j_(Matrix6d::Zero()),
+      Ki_j_(Matrix6d::Zero()),
       q_goal_(Vector6d::Zero()),
       spline_period_(100.0),
       delta_q_(Vector6d::Zero()),
@@ -22,53 +25,53 @@ namespace tum_ics_ur_robot_lli
       model_.initModel();
     }
 
-    SimpleEffortControl::~SimpleEffortControl()
+    UR10EffortControl::~UR10EffortControl()
     {
     }
 
-    void SimpleEffortControl::setQInit(const JointState &q_init)
+    void UR10EffortControl::setQInit(const JointState &q_init)
     {
       q_init_ = q_init;
     }
-    void SimpleEffortControl::setQHome(const JointState &q_home)
+    void UR10EffortControl::setQHome(const JointState &q_home)
     {
-      q_home_ = q_home;model_.initModel();
+      q_home_ = q_home;
     }
-    void SimpleEffortControl::setQPark(const JointState &q_park)
+    void UR10EffortControl::setQPark(const JointState &q_park)
     {
       q_park_ = q_park;
     }
 
-    bool SimpleEffortControl::init()
+    bool UR10EffortControl::init()
     {
-      ROS_WARN_STREAM("SimpleEffortControl::init");
+      ROS_WARN_STREAM("UR10EffortControl::init");
       std::vector<double> vec;
 
       // check namespace
-      std::string ns = "~simple_effort_ctrl";
+      std::string ns = "~ur10_effort_ctrl";
       if (!ros::param::has(ns))
       {
-        ROS_ERROR_STREAM("SimpleEffortControl init(): Control gains not defined in:" << ns);
+        ROS_ERROR_STREAM("UR10EffortControl init(): Control gains not defined in:" << ns);
         m_error = true;
         return false;
       }
 
       // D GAINS
-      ros::param::get(ns + "/gains_d", vec);
+      ros::param::get(ns + "/joint/gains_d", vec);
       if (vec.size() < STD_DOF)
       {
-        ROS_ERROR_STREAM("gains_d: wrong number of dimensions:" << vec.size());
+        ROS_ERROR_STREAM("gains_d : wrong number of dimensions:" << vec.size());
         m_error = true;
         return false;
       }
       for (size_t i = 0; i < STD_DOF; i++)
       {
-        Kd_(i, i) = vec[i];
+        Kd_j_(i, i) = vec[i];
       }
-      ROS_WARN_STREAM("Kd: \n" << Kd_);
+      ROS_WARN_STREAM("Kd of joint space controller: \n" << Kd_j_);
 
       // P GAINS
-      ros::param::get(ns + "/gains_p", vec);
+      ros::param::get(ns + "/joint/gains_p", vec);
       if (vec.size() < STD_DOF)
       {
         ROS_ERROR_STREAM("gains_p: wrong number of dimensions:" << vec.size());
@@ -77,12 +80,12 @@ namespace tum_ics_ur_robot_lli
       }
       for (int i = 0; i < STD_DOF; i++)
       {
-        Kp_(i, i) = vec[i] / Kd_(i, i);
+        Kp_j_(i, i) = vec[i] / Kd_j_(i, i);
       }
-      ROS_WARN_STREAM("Kp: \n" << Kp_);
+      ROS_WARN_STREAM("Kp of joint space controller: \n" << Kp_j_);
 
       // GOAL
-      ros::param::get(ns + "/goal", vec);
+      ros::param::get(ns + "/joint/goal", vec);
       if (vec.size() < STD_DOF)
       {
         ROS_ERROR_STREAM("gains_p: wrong number of dimensions:" << vec.size());
@@ -95,7 +98,7 @@ namespace tum_ics_ur_robot_lli
       }
       
       // total time
-      ros::param::get(ns + "/time", spline_period_);
+      ros::param::get(ns + "/joint/time", spline_period_);
       if (!(spline_period_ > 0))
       {
         ROS_ERROR_STREAM("spline_period_: is negative:" << spline_period_);
@@ -106,16 +109,44 @@ namespace tum_ics_ur_robot_lli
       ROS_WARN_STREAM("Total Time [s]: " << spline_period_);
       q_goal_ = DEG2RAD(q_goal_);
       ROS_WARN_STREAM("Goal [RAD]: \n" << q_goal_.transpose());
+
+      // D GAINS
+      ros::param::get(ns + "/cartesian/gains_d", vec);
+      if (vec.size() < STD_DOF)
+      {
+        ROS_ERROR_STREAM("gains_d : wrong number of dimensions:" << vec.size());
+        m_error = true;
+        return false;
+      }
+      for (size_t i = 0; i < STD_DOF; i++)
+      {
+        Kd_c_(i, i) = vec[i];
+      }
+      ROS_WARN_STREAM("Kd of joint space controller: \n" << Kd_c_);
+
+      // P GAINS
+      ros::param::get(ns + "/cartesian/gains_p", vec);
+      if (vec.size() < STD_DOF)
+      {
+        ROS_ERROR_STREAM("gains_p: wrong number of dimensions:" << vec.size());
+        m_error = true;
+        return false;
+      }
+      for (int i = 0; i < STD_DOF; i++)
+      {
+        Kp_c_(i, i) = vec[i];
+      }
+      ROS_WARN_STREAM("Kp of joint space controller: \n" << Kp_c_);
       return true;
     }
 
-    bool SimpleEffortControl::start()
+    bool UR10EffortControl::start()
     {
-      ROS_WARN_STREAM("SimpleEffortControl::start");
+      ROS_WARN_STREAM("UR10EffortControl::start");
       return true;
     }
 
-    Vector6d SimpleEffortControl::update(const RobotTime &time, const JointState &state)
+    Vector6d UR10EffortControl::update(const RobotTime &time, const JointState &state)
     {
       // auto start = std::chrono::high_resolution_clock::now();
       if (is_first_iter_)
@@ -129,10 +160,57 @@ namespace tum_ics_ur_robot_lli
       Vector6d tau;
       tau.setZero();
 
+      if (time.tD() <= 10.)
+      {
       // poly spline
       VVector6d vQd;
       vQd = getJointPVT5(q_start_, q_goal_, time.tD(), spline_period_);
-      Vector6d q_goal_2;
+
+      tau = jointPDController(time, state, vQd);
+      }
+
+      // Cartesian space
+      if (time.tD() > 10.)
+      {
+        Vector3d x_goal_t(1.0, 0.164, 0.750);
+        // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;
+
+        Eigen::Quaterniond x_goal_r(0.71, 0, 0, 0.71);
+
+        Vector6d x_goal;
+        x_goal << x_goal_t, x_goal_r.toRotationMatrix().eulerAngles(0, 1, 2);
+
+        VVector6d EE_d;
+        EE_d.resize(3);
+
+        EE_d[0] = x_goal;
+        EE_d[1] = Vector6d::Zero();
+        EE_d[2] = Vector6d::Zero();
+
+        tau = cartesianPDController(time, state, EE_d);
+      }
+
+      // Vector6d G = model_.computeGeneralizedGravity(state.q);
+      std::vector<Matrix4d> H_stack = model_.computeForwardKinematics(state.q);
+      std::vector<Matrix4d> Hcm_stack = model_.computeFKCoMs(state.q);
+
+      pubDH(H_stack, Hcm_stack);
+
+      // auto stop = std::chrono::high_resolution_clock::now();
+      // auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+      // std::cout << duration.count() << std::endl;
+
+      return tau;
+    }
+
+    bool UR10EffortControl::stop()
+    {
+      return true;
+    }
+
+    Vector6d  UR10EffortControl::jointPDController(const RobotTime &time, const JointState &state, const VVector6d &vQd)
+    {
+      Vector6d tau;
 
       delta_q_ = state.q - vQd[0];
       delta_qp_ = state.qp - vQd[1];
@@ -140,44 +218,17 @@ namespace tum_ics_ur_robot_lli
       // reference
       JointState js_r;
       js_r = state;
-      js_r.qp = vQd[1] - Kp_ * delta_q_;
-      js_r.qpp = vQd[2] - Kp_ * delta_qp_;
+      js_r.qp = vQd[1] - Kp_j_ * delta_q_;
+      js_r.qpp = vQd[2] - Kp_j_ * delta_qp_;
 
       // torque
       Vector6d Sq = state.qp - js_r.qp;
-      tau = -Kd_ * Sq;
 
-      // Cartesian space
-      if (time.tD() > 10.)
-      {
-        Matrix3d T0_W = AngleAxisd(M_PI, Vector3d::UnitZ()).matrix();
-        Vector3d x_goal_t(1.0, 0.164, 0.750);
-        // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;
-        x_goal_t = T0_W.inverse() * x_goal_t;
+      auto Yr = model_.computeRefRegressor(state.q, state.qp, js_r.qp, js_r.qpp);
+      auto Theta = model_.getTheta();
+      model_.updateTheta(state.q, state.qp, js_r.qp, js_r.qpp, Sq);
 
-        Eigen::Quaterniond x_goal_r(0.71, 0, 0, 0.71);
-        // Matrix3d x_goal_rm = AngleAxisd(-M_PI/2, Vector3d::UnitZ()).matrix() * T0_W.inverse() * x_goal_r.toRotationMatrix();
-        Matrix3d x_goal_rm = T0_W.inverse() * x_goal_r.toRotationMatrix();
-        Vector6d delta_x;
-
-        Matrix4d Xef = model_.computeEEPos(state.q);
-        Matrix3d Xef_rm = Xef.block<3,3>(0,0);
-        Vector3d Xef_t = Xef.block<3,1>(0,3);
-
-        Eigen::AngleAxisd delta_x_ra(x_goal_rm * Xef_rm.transpose());
-        Vector3d delta_x_r = delta_x_ra.angle() * delta_x_ra.axis();
-
-        delta_x << Xef_t(0) - x_goal_t(0), Xef_t(1) - x_goal_t(1), Xef_t(2) - x_goal_t(2), -delta_x_r(0), -delta_x_r(1), -delta_x_r(2);
-        Vector6d xpr = - delta_x;
-
-        Matrix6d J = model_.computeEEJacobian(state.q);
-
-        Vector6d Xefp = J * state.qp;
-        Vector6d Sx = Xefp - xpr;
-        Sq = J.inverse() * Sx;
-        tau = - 0.5 * Kd_ * Sq;
-      }
-
+      tau = -Kd_j_ * Sq + Yr * Theta;
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
@@ -191,50 +242,107 @@ namespace tum_ics_ur_robot_lli
 
         msg.qd[i] = vQd[0](i);
         msg.qpd[i] = vQd[1](i);
+        msg.qppd[i] = vQd[2](i);
 
         msg.Dq[i] = delta_q_(i);
         msg.Dqp[i] = delta_qp_(i);
 
-        // msg.Xef_0[i] = Xef(i);
-        // msg.Xefp_0[i] = Xefp(i);
-
-        // msg.Xd_0[i] = vXd[0](i);
-        // msg.Xdp_0[i] = vXd[1](i);
-
         msg.torques[i] = state.tau(i);
-
-        msg.DX[i] = Sq[i];
       }
       control_data_pub_.publish(msg);
-
-      Vector6d G = model_.computeGeneralizedGravity(state.q);
-      std::vector<Matrix4d> H_stack = model_.computeForwardKinematics(state.q);
-      std::vector<Matrix4d> Hcm_stack = model_.computeFKCoMs(state.q);
-
-      pubDH(H_stack, Hcm_stack);
-
-      Vector6d qpr = Vector6d::Zero();
-      Vector6d qppr = Vector6d::Zero();
-      model_.updateJointState(state);
-      auto Yr = model_.computeRefRegressor(state.q, state.qp, js_r.qp, js_r.qpp);
-      auto Theta = model_.getTheta();
-      model_.updateTheta(state.q, state.qp, js_r.qp, js_r.qpp, Sq);
-
-      tau = tau + Yr*Theta;
-
-      // auto stop = std::chrono::high_resolution_clock::now();
-      // auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-      // std::cout << duration.count() << std::endl;
 
       return tau;
     }
 
-    bool SimpleEffortControl::stop()
+    Vector6d  UR10EffortControl::cartesianPDController(const RobotTime &time, const JointState &state, const VVector6d &EE_d)
     {
-      return true;
+      // current end effector state w.r.t base
+      Matrix4d EE_pos = model_.computeEEPos(state.q);
+      Vector3d EE_t = EE_pos.block<3,1>(0,3);
+      Matrix3d EE_r = EE_pos.block<3,3>(0,0);
+
+      Matrix6d Jee = model_.computeEEJacobian(state.q);
+      Matrix6d Jee_inv = Jee.inverse();
+      Vector6d EE_vel = Jee * state.qp;
+      
+      // end effector reference w.r.t world
+      Vector3d EE_t_d = EE_d[0].block<3,1>(0,0);
+      Matrix3d EE_r_d = eulerXYZToRotationMatrix(EE_d[0].block<3,1>(3,0));
+
+      // end effector reference w.r.t base
+      Matrix3d RW_0 = model_.getTransformBaseToWorld().inverse().block<3,3>(0,0);
+      EE_r_d = RW_0 * EE_r_d;
+      EE_t_d = RW_0 * EE_t_d;
+
+      // rotation error
+      Eigen::AngleAxisd delta_x_r_aa(EE_r * EE_r_d.transpose());
+      Vector3d delta_x_r = delta_x_r_aa.angle() * delta_x_r_aa.axis();
+
+      // translation error 
+      Vector3d delta_x_t = EE_t - EE_t_d;
+
+      // error in cartesian space
+      Vector6d delta_x;
+      delta_x << delta_x_t, delta_x_r;
+      Vector6d delta_xp = EE_vel - EE_d[1];
+
+      // velocity reference in cartesian space
+      Vector6d EE_vel_ref = EE_d[1] - Kp_c_ * delta_x;
+
+      // acceleration reference in cartesian space
+      Matrix6d Jee_dot = model_.computeEEJacobainDerivative(state.q, state.qp);
+      Vector6d EE_acc_ref = EE_d[2] - Kp_c_ * delta_xp;
+
+      Vector6d Sx = EE_vel - EE_vel_ref;
+      Vector6d Sq = Jee_inv * Sx;
+
+      // model_.updateJointState(state);
+
+      // joint reference for regressor
+      Vector6d qpr = Jee_inv * EE_vel_ref;
+      Vector6d qppr = Jee_inv * (EE_acc_ref - Jee_dot * state.qp);
+
+      auto Yr = model_.computeRefRegressor(state.q, state.qp, qpr, qppr);
+      auto Theta = model_.getTheta();
+      // model_.updateTheta(state.q, state.qp, qpr, qppr, Sq);
+
+      Vector6d tau = - 0.5 * Kd_c_ * Sq + Yr * Theta;
+
+      // publish the ControlData (only for debugging)
+      tum_ics_ur_robot_msgs::ControlData msg;
+      msg.header.stamp = ros::Time::now();
+      msg.time = time.tD();
+      for (int i = 0; i < STD_DOF; i++)
+      {
+        msg.q[i] = state.q(i);
+        msg.qp[i] = state.qp(i);
+        msg.qpp[i] = state.qpp(i);
+
+        msg.Xef_0[i] = EE_t(i);
+        msg.Xefp_0[i] = EE_vel(i);
+
+        msg.Xd_0[i] = EE_d[0](i);
+        msg.Xdp_0[i] = EE_d[1](i);
+
+        msg.DX[i] = delta_x(i);
+        msg.DXp[i] = delta_xp(i);
+
+        msg.torques[i] = state.tau(i);
+      }
+      control_data_pub_.publish(msg);
+
+      return tau;
     }
 
-    bool SimpleEffortControl::pubDH(const std::vector<Matrix4d> &H_stack, const std::vector<Matrix4d> &Hcm_stack)
+    Matrix3d UR10EffortControl::eulerXYZToRotationMatrix(const Vector3d &euler)
+    {
+      Eigen::Quaterniond R = AngleAxisd(euler(0), Vector3d::UnitX())
+       * AngleAxisd(euler(1), Vector3d::UnitY()) * AngleAxisd(euler(2), Vector3d::UnitZ());
+
+      return R.toRotationMatrix();
+    }
+
+    bool UR10EffortControl::pubDH(const std::vector<Matrix4d> &H_stack, const std::vector<Matrix4d> &Hcm_stack)
     {
       tf::Transform transform;
       tf::Quaternion q;

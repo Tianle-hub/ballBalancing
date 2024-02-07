@@ -15,7 +15,7 @@ namespace tum_ics_ur_robot_lli
       CARTESIANPD
     };
     
-    class SimpleEffortControl : public ControlEffort
+    class UR10EffortControl : public ControlEffort
     {
     private:
       bool is_first_iter_;
@@ -29,9 +29,15 @@ namespace tum_ics_ur_robot_lli
       ros::Publisher control_data_pub_;
       tf::TransformBroadcaster dh_br;
 
-      Matrix6d Kp_;
-      Matrix6d Kd_;
-      Matrix6d Ki_;
+      // joint space controller
+      Matrix6d Kp_j_;
+      Matrix6d Kd_j_;
+      Matrix6d Ki_j_;
+
+      // cartesian space controller
+      Matrix6d Kp_c_;
+      Matrix6d Kd_c_;
+      Matrix6d Ki_c_;
 
       Vector6d q_goal_;
       double spline_period_;
@@ -42,9 +48,9 @@ namespace tum_ics_ur_robot_lli
       ur10_model::UR10Model model_;
 
     public:
-      SimpleEffortControl(double weight = 1.0, const QString &name = "SimpleEffortCtrl");
+      UR10EffortControl(double weight = 1.0, const QString &name = "UR10EffortCtrl");
 
-      ~SimpleEffortControl();
+      ~UR10EffortControl();
 
       void setQInit(const JointState &q_init);
 
@@ -59,9 +65,15 @@ namespace tum_ics_ur_robot_lli
 
       bool stop();
 
+      Matrix3d eulerXYZToRotationMatrix(const Vector3d &euler);
+
       bool pubDH(const std::vector<Matrix4d> &H_stack, const std::vector<Matrix4d> &Hcm_stack);
 
       Vector6d update(const RobotTime &time, const JointState &state);
+
+      Vector6d jointPDController(const RobotTime &time, const JointState &state, const VVector6d &vQd);
+
+      Vector6d cartesianPDController(const RobotTime &time, const JointState &state, const VVector6d &EE_r);
 
     };
 
