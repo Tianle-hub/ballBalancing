@@ -4,6 +4,7 @@
 #include <tum_ics_ur_robot_lli/RobotControllers/ControlEffort.h>
 #include <tf/transform_broadcaster.h>
 #include <ur10_controller/UR10Model.h>
+#include <ball_controller/ball_controller.h>
 
 namespace tum_ics_ur_robot_lli
 {
@@ -46,6 +47,8 @@ namespace tum_ics_ur_robot_lli
       Vector6d delta_qp_;
 
       ur10_model::UR10Model model_;
+
+      BallControl::BallController ball_controller;
 
     public:
       UR10EffortControl(double weight = 1.0, const QString &name = "UR10EffortCtrl");

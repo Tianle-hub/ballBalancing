@@ -13,6 +13,8 @@
 
     <!-- controller parameter --> 
     <rosparam file="$(find ur10_controller)/launch/configs/ur10EffortCtrl.yaml" command="load" />
+
+    <rosparam file="$(find ball_controller)/configs/ball_controller.yaml" command="load" />
     
   </node>
 

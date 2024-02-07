@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   tf_conversions
+  ball_controller
 )
 
 ##############################################################################
@@ -135,7 +136,7 @@ set(CMAKE_CXX_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES my_ur10_controller
- CATKIN_DEPENDS tum_ics_ur_robot_msgs roscpp rospy sensor_msgs std_msgs tf tf_conversions visualization_msgs tum_ics_ur_robot_lli
+ CATKIN_DEPENDS tum_ics_ur_robot_msgs roscpp rospy sensor_msgs std_msgs tf tf_conversions visualization_msgs tum_ics_ur_robot_lli ball_controller
  DEPENDS ${DEPENDS_VAR}
 )
 
@@ -197,6 +198,7 @@ foreach(target ${APP_TARGETS})
         ${catkin_LIBRARIES}
         ${roscpp_LIBRARIES}
         ${tum_ics_ur_robot_lli_LIBRARIES}
+        ${ball_controller_LIBRARIES}
         ${Qt5Network_LIBRARIES}
         ${Qt5Widgets_LIBRARIES}
         ${RTTHREADS_LIBRARIES}
@@ -217,6 +219,7 @@ target_link_libraries(my_ur10_controller
     ${catkin_LIBRARIES}
     ${roscpp_LIBRARIES}
     ${tum_ics_ur_robot_lli_LIBRARIES}
+    ${ball_controller_LIBRARIES}
     ${Qt5Network_LIBRARIES}
     ${Qt5Widgets_LIBRARIES}
     ${RTTHREADS_LIBRARIES}

@@ -23,6 +23,7 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
+      ball_controller.initModel(Vector4d(0.2, 0.1, 0.1, 0.1), Vector2d(0, 0));
     }
 
     UR10EffortControl::~UR10EffortControl()
@@ -177,8 +178,18 @@ namespace tum_ics_ur_robot_lli
 
         Eigen::Quaterniond x_goal_r(0.71, 0, 0, 0.71);
 
+        Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(0, 1, 2);
+
+        Vector4d ball_state = ball_controller.updateModel(time.tD() - 10., EE_pos_r.block<2,1>(0,0));
+        auto xxxx = EE_pos_r.block<2,1>(0,0);
+
+        Vector2d u_ball_d = ball_controller.update(ball_state);
+
         Vector6d x_goal;
         x_goal << x_goal_t, x_goal_r.toRotationMatrix().eulerAngles(0, 1, 2);
+
+        x_goal(3) = -u_ball_d(0);
+        x_goal(4) = -u_ball_d(1);
 
         VVector6d EE_d;
         EE_d.resize(3);
@@ -304,9 +315,9 @@ namespace tum_ics_ur_robot_lli
 
       auto Yr = model_.computeRefRegressor(state.q, state.qp, qpr, qppr);
       auto Theta = model_.getTheta();
-      // model_.updateTheta(state.q, state.qp, qpr, qppr, Sq);
+      model_.updateTheta(state.q, state.qp, qpr, qppr, Sq);
 
-      Vector6d tau = - 0.5 * Kd_c_ * Sq + Yr * Theta;
+      Vector6d tau = - Kd_c_ * Sq + Yr * Theta;
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
