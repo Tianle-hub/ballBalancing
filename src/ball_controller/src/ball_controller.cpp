@@ -1,27 +1,27 @@
-#include <ball_controller/ball_model.h>
+#include <ball_controller/ball_controller.h>
 
-namespace BallController
+namespace BallControl
 {
-  BallModel::BallModel()
+  BallController::BallController()
   {
 
   }
 
-  BallModel::~BallModel()
+  BallController::~BallController()
   {
 
   }
 
-  bool BallModel::initModel(const Eigen::Vector4d &x, const Eigen::Vector2d &input)
+  bool BallController::initModel(const Eigen::Vector4d &x, const Eigen::Vector2d &input)
   {
-    ROS_WARN_STREAM("BallModel::init");
+    ROS_WARN_STREAM("BallController::init");
     std::vector<double> vec;
 
     // check namespace
-    std::string ns = "~ball_model";
+    std::string ns = "~ball_controller";
     if (!ros::param::has(ns))
     {
-      ROS_ERROR_STREAM("BallModel init(): Model parameters not defined in:" << ns);
+      ROS_ERROR_STREAM("BallController init(): Model parameters not defined in:" << ns);
       return false;
     }
 
@@ -61,6 +61,24 @@ namespace BallController
     }
     ROS_WARN_STREAM("B: \n" << B_);
 
+    // B
+    ros::param::get(ns + "/K", vec);
+    if (vec.size() < 8)
+    {
+      ROS_ERROR_STREAM("K : wrong number of dimensions:" << vec.size());
+      return false;
+    }
+    k = 0;
+    for (size_t i = 0; i < 2; i++)
+    {
+      for (size_t j = 0; j < 4; j++)
+      {
+      K_(i, j) = vec[k];
+      k++;
+      }
+    }
+    ROS_WARN_STREAM("K: \n" << K_);
+
     // state
     x_ = x;
     // input
@@ -70,19 +88,24 @@ namespace BallController
     return true;
   }
 
-  void BallModel::setZero()
+  void BallController::setZero()
   {
     x_ = Eigen::Vector4d::Zero();
     u_ = Eigen::Vector2d::Zero();
   }
 
-  void BallModel::integrate(const double &timeStep)
+  void BallController::integrate(const double &timeStep)
   {
     Eigen::Vector4d xp = A_ * x_ + B_ * Eigen::Vector2d(sin(u_(0)), sin(u_(1)));
     x_ += xp * timeStep;
   }
 
-  Eigen::Vector4d BallModel::update(const double &time, const Eigen::Vector2d &input)
+  Eigen::Vector2d BallController::update(const Eigen::Vector4d &x)
+  {
+    return -K_ * x;
+  }
+
+  Eigen::Vector4d BallController::updateModel(const double &time, const Eigen::Vector2d &input)
   {
     double timeStep = time - t_prev;
     t_prev = time;

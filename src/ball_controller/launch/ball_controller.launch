@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node name="ball" pkg="ball_controller" type="ball_controller_test" output="screen">
+
+    <rosparam file="$(find ball_controller)/configs/ball_controller.yaml" command="load" />
+    
+  </node>
+
+</launch>

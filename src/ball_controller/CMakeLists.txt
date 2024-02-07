@@ -10,6 +10,7 @@ project(ball_controller)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  geometry_msgs
   tf
 )
 
@@ -111,7 +112,7 @@ add_definitions(${EIGEN_DEFINITIONS})
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES my_ball_controller
- CATKIN_DEPENDS roscpp tf std_msgs
+ CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs
 #  DEPENDS system_lib
 )
 
@@ -130,7 +131,7 @@ include_directories(
 
 ## Declare a C++ library
 add_library(my_ball_controller
-  src/ball_model.cpp
+  src/ball_controller.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -141,7 +142,7 @@ add_library(my_ball_controller
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(ball_model_test src/applications/ball_model_test.cpp)
+add_executable(ball_controller_test src/applications/ball_controller_test.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,10 +152,13 @@ add_executable(ball_model_test src/applications/ball_model_test.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(ball_model_test ${std_msgs_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ball_controller_test 
+                ${std_msgs_EXPORTED_TARGETS} 
+                ${catkin_EXPORTED_TARGETS}
+                ${geometry_msgs_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ball_model_test
+target_link_libraries(ball_controller_test
   my_ball_controller
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
