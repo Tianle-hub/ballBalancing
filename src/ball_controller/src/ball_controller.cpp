@@ -85,6 +85,9 @@ namespace BallControl
     u_ = input;
     t_prev = 0;
 
+    position_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
+    velocity_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
+
     return true;
   }
 
@@ -113,6 +116,21 @@ namespace BallControl
     u_ = input;
     
     integrate(timeStep);
+
+    geometry_msgs::Vector3Stamped ball_position;
+    geometry_msgs::Vector3Stamped ball_velocity;
+
+    ball_position.header.stamp = ros::Time::now();
+    ball_velocity.header.stamp = ros::Time::now();
+
+    ball_position.vector.x = x_(0);
+    ball_position.vector.y = x_(2);
+
+    ball_velocity.vector.x = x_(1);
+    ball_velocity.vector.y = x_(3);
+
+    position_pb.publish(ball_position);
+    velocity_pb.publish(ball_velocity);
 
     return x_;
   }

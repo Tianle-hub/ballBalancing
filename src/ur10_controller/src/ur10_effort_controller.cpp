@@ -23,7 +23,7 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      ball_controller.initModel(Vector4d(0.2, 0.1, 0.1, 0.1), Vector2d(0, 0));
+      ball_controller.initModel(Vector4d(0., 0., 0.05, 0.), Vector2d(0, 0));
     }
 
     UR10EffortControl::~UR10EffortControl()
@@ -161,7 +161,7 @@ namespace tum_ics_ur_robot_lli
       Vector6d tau;
       tau.setZero();
 
-      if (time.tD() <= 10.)
+      if (time.tD() <= 50.)
       {
       // poly spline
       VVector6d vQd;
@@ -171,7 +171,7 @@ namespace tum_ics_ur_robot_lli
       }
 
       // Cartesian space
-      if (time.tD() > 10.)
+      if (time.tD() > 50.)
       {
         Vector3d x_goal_t(1.0, 0.164, 0.750);
         // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;
@@ -180,16 +180,18 @@ namespace tum_ics_ur_robot_lli
 
         Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(0, 1, 2);
 
-        Vector4d ball_state = ball_controller.updateModel(time.tD() - 10., EE_pos_r.block<2,1>(0,0));
-        auto xxxx = EE_pos_r.block<2,1>(0,0);
+        Vector4d ball_state = ball_controller.updateModel(time.tD() - 50., EE_pos_r.block<2,1>(0,0));
 
         Vector2d u_ball_d = ball_controller.update(ball_state);
 
         Vector6d x_goal;
+        // x_goal << x_goal_t, (Eigen::AngleAxisd(M_PI/4, Vector3d::UnitX()) * x_goal_r).toRotationMatrix().eulerAngles(0, 1, 2);
         x_goal << x_goal_t, x_goal_r.toRotationMatrix().eulerAngles(0, 1, 2);
 
-        x_goal(3) = -u_ball_d(0);
-        x_goal(4) = -u_ball_d(1);
+        // x_goal(3) = u_ball_d(0);
+        // x_goal(4) = -u_ball_d(1);
+
+        // ROS_INFO_STREAM("u_ball_d : \n" << u_ball_d);
 
         VVector6d EE_d;
         EE_d.resize(3);
@@ -272,6 +274,9 @@ namespace tum_ics_ur_robot_lli
       Vector3d EE_t = EE_pos.block<3,1>(0,3);
       Matrix3d EE_r = EE_pos.block<3,3>(0,0);
 
+      Vector6d Xef_0;
+      Xef_0 << EE_t, EE_r.eulerAngles(0, 1, 2);
+
       Matrix6d Jee = model_.computeEEJacobian(state.q);
       Matrix6d Jee_inv = Jee.inverse();
       Vector6d EE_vel = Jee * state.qp;
@@ -295,6 +300,7 @@ namespace tum_ics_ur_robot_lli
       // error in cartesian space
       Vector6d delta_x;
       delta_x << delta_x_t, delta_x_r;
+
       Vector6d delta_xp = EE_vel - EE_d[1];
 
       // velocity reference in cartesian space
@@ -307,6 +313,9 @@ namespace tum_ics_ur_robot_lli
       Vector6d Sx = EE_vel - EE_vel_ref;
       Vector6d Sq = Jee_inv * Sx;
 
+      Sx(3) = -Sx(3);
+
+      Vector6d Sq2 = Jee_inv * Sx;
       // model_.updateJointState(state);
 
       // joint reference for regressor
@@ -315,7 +324,9 @@ namespace tum_ics_ur_robot_lli
 
       auto Yr = model_.computeRefRegressor(state.q, state.qp, qpr, qppr);
       auto Theta = model_.getTheta();
-      model_.updateTheta(state.q, state.qp, qpr, qppr, Sq);
+      model_.updateTheta(state.q, state.qp, qpr, qppr, Sq2);
+
+      // Sq(3) = -Sq(3);
 
       Vector6d tau = - Kd_c_ * Sq + Yr * Theta;
 
@@ -329,7 +340,7 @@ namespace tum_ics_ur_robot_lli
         msg.qp[i] = state.qp(i);
         msg.qpp[i] = state.qpp(i);
 
-        msg.Xef_0[i] = EE_t(i);
+        msg.Xef_0[i] = Xef_0(i);
         msg.Xefp_0[i] = EE_vel(i);
 
         msg.Xd_0[i] = EE_d[0](i);

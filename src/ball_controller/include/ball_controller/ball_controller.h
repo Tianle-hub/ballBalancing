@@ -3,6 +3,8 @@
 
 #include <Eigen/Dense>
 #include <tf/transform_broadcaster.h>
+#include <geometry_msgs/Vector3Stamped.h>
+
 
 namespace BallControl
 {
@@ -24,6 +26,11 @@ namespace BallControl
       Eigen::Matrix<double,2,4> K_;
 
       double t_prev;
+
+      ros::NodeHandle nh;
+
+      ros::Publisher position_pb;
+      ros::Publisher velocity_pb;
 
     public:
       BallController();
