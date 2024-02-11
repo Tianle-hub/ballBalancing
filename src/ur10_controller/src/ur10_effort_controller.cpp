@@ -23,7 +23,7 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      ball_controller.initModel(Vector4d(0., 0., 0.05, 0.), Vector2d(0, 0));
+      ball_controller.initModel(Vector4d(0.2, -0.1, 0.2, -0.1), Vector2d(0, 0));
     }
 
     UR10EffortControl::~UR10EffortControl()
@@ -161,7 +161,7 @@ namespace tum_ics_ur_robot_lli
       Vector6d tau;
       tau.setZero();
 
-      if (time.tD() <= 50.)
+      if (time.tD() <= 20.)
       {
       // poly spline
       VVector6d vQd;
@@ -171,25 +171,18 @@ namespace tum_ics_ur_robot_lli
       }
 
       // Cartesian space
-      if (time.tD() > 50.)
+      if (time.tD() > 20.)
       {
         Vector3d x_goal_t(1.0, 0.164, 0.750);
         // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;
 
-        Eigen::Quaterniond x_goal_r(0.71, 0, 0, 0.71);
+        Vector2d u_ball_d = updateBallController(time.tD() - 20., state);
 
-        Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(0, 1, 2);
-
-        Vector4d ball_state = ball_controller.updateModel(time.tD() - 50., EE_pos_r.block<2,1>(0,0));
-
-        Vector2d u_ball_d = ball_controller.update(ball_state);
+        Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
 
         Vector6d x_goal;
-        // x_goal << x_goal_t, (Eigen::AngleAxisd(M_PI/4, Vector3d::UnitX()) * x_goal_r).toRotationMatrix().eulerAngles(0, 1, 2);
-        x_goal << x_goal_t, x_goal_r.toRotationMatrix().eulerAngles(0, 1, 2);
 
-        // x_goal(3) = u_ball_d(0);
-        // x_goal(4) = -u_ball_d(1);
+        x_goal << x_goal_t, x_goal_r.eulerAngles(0, 1, 2);
 
         // ROS_INFO_STREAM("u_ball_d : \n" << u_ball_d);
 
@@ -355,6 +348,20 @@ namespace tum_ics_ur_robot_lli
 
       return tau;
     }
+
+    Vector2d UR10EffortControl::updateBallController(const double &time, const JointState &state)
+    {
+      Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1, 0);
+
+      Vector2d ball_u = Vector2d(EE_pos_r(1), EE_pos_r(2));
+
+      Vector4d ball_state = ball_controller.updateModel(time, ball_u);
+
+      Vector2d u_ball_d = ball_controller.update(ball_state);
+
+      return u_ball_d;
+    }
+
 
     Matrix3d UR10EffortControl::eulerXYZToRotationMatrix(const Vector3d &euler)
     {

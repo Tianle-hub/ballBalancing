@@ -78,6 +78,8 @@ namespace tum_ics_ur_robot_lli
 
       Vector6d cartesianPDController(const RobotTime &time, const JointState &state, const VVector6d &EE_r);
 
+      Vector2d updateBallController(const double &time, const JointState &state);
+
     };
 
   } // namespace RobotControllers

@@ -25,12 +25,14 @@ namespace BallControl
 
       Eigen::Matrix<double,2,4> K_;
 
-      double t_prev;
+      double t_prev_;
 
-      ros::NodeHandle nh;
+      ros::NodeHandle nh_;
 
-      ros::Publisher position_pb;
-      ros::Publisher velocity_pb;
+      ros::Publisher position_pb_;
+      ros::Publisher velocity_pb_;
+
+      tf::TransformBroadcaster br_;
 
     public:
       BallController();
@@ -49,8 +51,7 @@ namespace BallControl
 
       void integrate(const double &timeStep);
 
-
-
+      void pubBallTF();
 
   };
 }

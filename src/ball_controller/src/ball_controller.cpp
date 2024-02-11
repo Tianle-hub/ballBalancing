@@ -83,10 +83,10 @@ namespace BallControl
     x_ = x;
     // input
     u_ = input;
-    t_prev = 0;
+    t_prev_ = 0;
 
-    position_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
-    velocity_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
+    position_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
+    velocity_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
 
     return true;
   }
@@ -110,8 +110,8 @@ namespace BallControl
 
   Eigen::Vector4d BallController::updateModel(const double &time, const Eigen::Vector2d &input)
   {
-    double timeStep = time - t_prev;
-    t_prev = time;
+    double timeStep = time - t_prev_;
+    t_prev_ = time;
 
     u_ = input;
     
@@ -129,9 +129,22 @@ namespace BallControl
     ball_velocity.vector.x = x_(1);
     ball_velocity.vector.y = x_(3);
 
-    position_pb.publish(ball_position);
-    velocity_pb.publish(ball_velocity);
+    position_pb_.publish(ball_position);
+    velocity_pb_.publish(ball_velocity);
+
+    pubBallTF();
 
     return x_;
+  }
+
+  void BallController::pubBallTF()
+  {
+    tf::Transform transform;
+    tf::Quaternion q;
+
+    transform.setOrigin(tf::Vector3(x_(0), x_(2), 0));
+    q.setRPY(0,0,0);
+    transform.setRotation(q);
+    br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_6", "ball"));
   }
 }
