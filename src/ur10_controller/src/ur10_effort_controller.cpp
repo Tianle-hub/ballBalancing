@@ -178,7 +178,10 @@ namespace tum_ics_ur_robot_lli
 
         Vector2d u_ball_d = updateBallController(time.tD() - 20., state);
 
-        Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
+        // Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
+
+        Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
+
 
         Vector6d x_goal;
 
