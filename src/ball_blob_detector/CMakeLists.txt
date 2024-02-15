@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
 # Eigen
 ##############################################################################
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 add_definitions(${EIGEN_DEFINITIONS})
 
 ## System dependencies are found with CMake's conventions
@@ -112,7 +112,7 @@ add_definitions(${EIGEN_DEFINITIONS})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES my_ball_blob_detector
+ LIBRARIES my_ball_blob_detector ball_blob_detector_test
 #  CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs
  CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs image_transport cv_bridge
  DEPENDS OpenCV
@@ -130,6 +130,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${roscpp_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 
@@ -147,7 +148,7 @@ add_library(my_ball_blob_detector
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 
-# add_executable(ball_controller_test src/applications/ball_controller_test.cpp)
+add_executable(ball_blob_detector_test src/ball_blob_detector.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -168,6 +169,14 @@ target_link_libraries( # ball_controller_test
   my_ball_blob_detector
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
+
+target_link_libraries( # ball_controller_test
+  ball_blob_detector_test
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 #############
