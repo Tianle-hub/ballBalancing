@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 
     cv::Mat frame;
 
-    int frameSkip = 10; // Only process every 10th frame
+    int frameSkip = 3; // Only process every 10th frame
     int frameCount = 0;
     while (true) {
         
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
                 // Draw detected blob as a red circle on the original frame
                 cv::Mat im_with_keypoints;
-                drawKeypoints(frame, largestBlob, im_with_keypoints, cv::Scalar(0,0,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+                drawKeypoints(frame, largestBlob, im_with_keypoints, cv::Scalar(0,255,0), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
                 // Show the result
                 cv::imshow("Red Ball Detection", im_with_keypoints);
