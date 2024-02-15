@@ -137,6 +137,7 @@ include_directories(
 ## Declare a C++ library
 add_library(my_ball_blob_detector
   src/ball_blob_detector.cpp
+  # src/camera_test.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -149,7 +150,7 @@ add_library(my_ball_blob_detector
 ## The recommended prefix ensures that target names across packages don't collide
 
 add_executable(ball_blob_detector_test src/ball_blob_detector.cpp)
-
+add_executable(camera_test src/camera_test.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -174,6 +175,13 @@ target_link_libraries( # ball_controller_test
 
 target_link_libraries( # ball_controller_test
   ball_blob_detector_test
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
+
+target_link_libraries( # ball_controller_test
+  camera_test
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
   ${OpenCV_LIBS}
