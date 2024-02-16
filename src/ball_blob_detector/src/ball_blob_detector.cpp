@@ -63,6 +63,13 @@ int main(int argc, char **argv)
             cv::Mat redMask1, redMask2, redMask_hsv;
             cv::inRange(hsvImage, cv::Scalar(0, 120, 70), cv::Scalar(10, 255, 255), redMask1);
             cv::inRange(hsvImage, cv::Scalar(170, 120, 70), cv::Scalar(180, 255, 255), redMask2);
+
+            cv::Mat maskYellowOrange;
+            // Adjust the hue values to target yellow to orange. 
+            // These values might need to be fine-tuned based on your specific lighting conditions and the exact color of the ball.
+            cv::inRange(hsvImage, cv::Scalar(15, 70, 50), cv::Scalar(30, 255, 255), maskYellowOrange);
+
+
             cv::bitwise_or(redMask1, redMask2, redMask_hsv);
 
             // // Threshold for red color in YCrCb space
@@ -76,12 +83,12 @@ int main(int argc, char **argv)
 
             // Morphological operations
             cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-            cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_CLOSE, kernel);
-            cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_OPEN, kernel);
+            cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_CLOSE, kernel);  // maskYellowOrange, redMask_hsv
+            cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_OPEN, kernel);   // maskYellowOrange, redMask_hsv
 
             // Detect blobs on the red mask
             std::vector<cv::KeyPoint> keypoints;
-            detector->detect(redMask_hsv, keypoints);
+            detector->detect(redMask_hsv, keypoints);   // maskYellowOrange, redMask_hsv
 
             if (!keypoints.empty()) {
                 // Sort keypoints by size in descending order
