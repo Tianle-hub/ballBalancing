@@ -4,8 +4,9 @@
 
 int main(int argc, char **argv)
 {
-
-    int cameraIndex = 4;  // 0 for internal, 4 for usb camera in Tianle Laptop left
+    // 0 for internal, 4 for usb camera in Tianle Laptop left
+    // 0 for PC in ics, top usb
+    int cameraIndex = 0;  
 
     cv::VideoCapture capture(cameraIndex); // Open the camera with the found index
     std::cout<<"1111";
@@ -25,12 +26,14 @@ int main(int argc, char **argv)
     params.minArea = 100;
     params.maxArea = 10000;
     params.filterByCircularity = true;
+    params.filterByColor = true;
+    params.blobColor = 255;
     params.minCircularity = 0.1;
     cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
     cv::Mat frame;
 
-    int frameSkip = 3; // Only process every 10th frame
+    int frameSkip = 1; // Only process every 10th frame
     int frameCount = 0;
     while (true) {
         
@@ -55,6 +58,7 @@ int main(int argc, char **argv)
             cv::inRange(hsvImage, cv::Scalar(0, 120, 70), cv::Scalar(10, 255, 255), redMask1);
             cv::inRange(hsvImage, cv::Scalar(170, 120, 70), cv::Scalar(180, 255, 255), redMask2);
             cv::bitwise_or(redMask1, redMask2, redMask);
+
 
             // Morphological operations
             cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
