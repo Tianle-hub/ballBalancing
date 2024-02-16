@@ -140,6 +140,32 @@ add_library(my_ball_blob_detector
   # src/camera_test.cpp
 )
 
+
+set(APP_TARGETS
+  ball_blob_detector_node
+)
+
+foreach(target ${APP_TARGETS})
+    add_executable(${target} src/applications/${target}.cpp)
+    target_link_libraries(${target}
+      my_ball_blob_detector
+        ${catkin_LIBRARIES}
+        ${roscpp_LIBRARIES}
+        ${tum_ics_ur_robot_lli_LIBRARIES}
+        ${ball_controller_LIBRARIES}
+        ${Qt5Network_LIBRARIES}
+        ${Qt5Widgets_LIBRARIES}
+        ${RTTHREADS_LIBRARIES}
+        ${TMATH_LIBRARIES})
+
+    add_dependencies(${target}
+                ${std_msgs_EXPORTED_TARGETS} 
+                ${catkin_EXPORTED_TARGETS}
+                ${geometry_msgs_EXPORTED_TARGETS}
+                ${visualization_msgs_EXPORTED_TARGETS} )
+endforeach()
+
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -149,7 +175,7 @@ add_library(my_ball_blob_detector
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 
-add_executable(ball_blob_detector_test src/ball_blob_detector.cpp)
+add_executable(ball_blob_detector_test src/ball_blob_detector_test.cpp)
 add_executable(camera_test src/camera_test.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -160,18 +186,15 @@ add_executable(camera_test src/camera_test.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 
-# add_dependencies(ball_controller_test 
-#                 ${std_msgs_EXPORTED_TARGETS} 
-#                 ${catkin_EXPORTED_TARGETS}
-#                 ${geometry_msgs_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries( # ball_controller_test
-  my_ball_blob_detector
-  ${catkin_LIBRARIES}
-  ${roscpp_LIBRARIES}
-  ${OpenCV_LIBS}
-)
+# target_link_libraries( # ball_controller_test
+#   my_ball_blob_detector
+#   ${catkin_LIBRARIES}
+#   ${roscpp_LIBRARIES}
+#   ${OpenCV_LIBS}
+# )
 
 target_link_libraries( # ball_controller_test
   ball_blob_detector_test
