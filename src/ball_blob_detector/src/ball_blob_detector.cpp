@@ -49,25 +49,39 @@ int main(int argc, char **argv)
         // cv::resize(frame, resizedFrame, cv::Size(), scale, scale);
 
         if (frameCount % frameSkip == 0) {
-            // Convert to HSV color space
-            cv::Mat hsvImage;
+            cv::Mat hsvImage, ycrcbImage;
+
+            // Convert the image from BGR to HSV color space
             cv::cvtColor(frame, hsvImage, cv::COLOR_BGR2HSV);
 
+            // // Convert the same image from BGR to YCrCb color space
+            // cv::cvtColor(frame, ycrcbImage, cv::COLOR_BGR2YCrCb);
+
+
+
             // Threshold the HSV image to get only red colors
-            cv::Mat redMask1, redMask2, redMask;
+            cv::Mat redMask1, redMask2, redMask_hsv;
             cv::inRange(hsvImage, cv::Scalar(0, 120, 70), cv::Scalar(10, 255, 255), redMask1);
             cv::inRange(hsvImage, cv::Scalar(170, 120, 70), cv::Scalar(180, 255, 255), redMask2);
-            cv::bitwise_or(redMask1, redMask2, redMask);
+            cv::bitwise_or(redMask1, redMask2, redMask_hsv);
+
+            // // Threshold for red color in YCrCb space
+            // cv::Mat redMask_YCrCb;
+            // cv::inRange(ycrcbImage, cv::Scalar(0, 133, 77), cv::Scalar(255, 173, 127), redMask_YCrCb);
+            
+            // cv::Mat red_combinedMask;
+            // cv::bitwise_and(redMask_hsv, redMask_YCrCb, red_combinedMask);
+
 
 
             // Morphological operations
             cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-            cv::morphologyEx(redMask, redMask, cv::MORPH_CLOSE, kernel);
-            cv::morphologyEx(redMask, redMask, cv::MORPH_OPEN, kernel);
+            cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_CLOSE, kernel);
+            cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_OPEN, kernel);
 
             // Detect blobs on the red mask
             std::vector<cv::KeyPoint> keypoints;
-            detector->detect(redMask, keypoints);
+            detector->detect(redMask_hsv, keypoints);
 
             if (!keypoints.empty()) {
                 // Sort keypoints by size in descending order
