@@ -15,14 +15,14 @@ int main(int argc, char **argv)
    * You must call one of the versions of ros::init() before using any other
    * part of the ROS system.
    */
-  ros::init(argc, argv, "talker");
+  ros::init(argc, argv, "ballBlobDetector");
 
   /**
    * NodeHandle is the main access point to communications with the ROS system.
    * The first NodeHandle constructed will fully initialize this node, and the last
    * NodeHandle destructed will close down the node.
    */
-  ros::NodeHandle n;
+  ros::NodeHandle nh;
 
   /**
    * The advertise() function is how you tell ROS that you want to
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
    * than we can send them, the number here specifies how many messages to
    * buffer up before throwing some away.
    */
-  ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
+  ros::Publisher ball_pub = nh.advertise<std_msgs::String>("ball", 1000);
 
   ros::Rate loop_rate(10);
 
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
      * given as a template parameter to the advertise<>() call, as was done
      * in the constructor above.
      */
-    chatter_pub.publish(msg);
+    ball_pub.publish(msg);
 
     ros::spinOnce();
 
