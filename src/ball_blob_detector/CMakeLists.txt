@@ -112,7 +112,7 @@ add_definitions(${EIGEN_DEFINITIONS})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES my_ball_blob_detector ball_blob_detector_test
+ LIBRARIES my_ball_blob_detector # ball_blob_detector_test
 #  CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs
  CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs image_transport cv_bridge
  DEPENDS OpenCV
@@ -132,7 +132,8 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
 )
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wno-cpp -O3" )
+set(CMAKE_BUILD_TYPE Release)
 
 ## Declare a C++ library
 add_library(my_ball_blob_detector
@@ -148,15 +149,17 @@ set(APP_TARGETS
 foreach(target ${APP_TARGETS})
     add_executable(${target} src/applications/${target}.cpp)
     target_link_libraries(${target}
-      my_ball_blob_detector
-        ${catkin_LIBRARIES}
-        ${roscpp_LIBRARIES}
+        my_ball_blob_detector
         ${tum_ics_ur_robot_lli_LIBRARIES}
         ${ball_controller_LIBRARIES}
         ${Qt5Network_LIBRARIES}
         ${Qt5Widgets_LIBRARIES}
         ${RTTHREADS_LIBRARIES}
-        ${TMATH_LIBRARIES})
+        ${TMATH_LIBRARIES}
+        ${catkin_LIBRARIES}
+        ${roscpp_LIBRARIES}
+        ${OpenCV_LIBS}
+        )
 
     add_dependencies(${target}
                 ${std_msgs_EXPORTED_TARGETS} 
@@ -175,7 +178,7 @@ endforeach()
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 
-add_executable(ball_blob_detector_test src/ball_blob_detector_test.cpp)
+add_executable(ball_blob_detector_test src/ball_blob_detector.cpp)
 add_executable(camera_test src/camera_test.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -189,21 +192,21 @@ add_executable(camera_test src/camera_test.cpp)
 
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries( # ball_controller_test
-#   my_ball_blob_detector
-#   ${catkin_LIBRARIES}
-#   ${roscpp_LIBRARIES}
-#   ${OpenCV_LIBS}
-# )
+target_link_libraries( 
+  my_ball_blob_detector
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
 
-target_link_libraries( # ball_controller_test
+target_link_libraries( 
   ball_blob_detector_test
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
   ${OpenCV_LIBS}
 )
 
-target_link_libraries( # ball_controller_test
+target_link_libraries( 
   camera_test
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
@@ -229,6 +232,9 @@ target_link_libraries( # ball_controller_test
 # install(TARGETS ${PROJECT_NAME}_node
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
