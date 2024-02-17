@@ -10,11 +10,10 @@ public:
     BallBlobDetector(int cameraIndex);
     ~BallBlobDetector();
     void run();
-
-private:
     cv::VideoCapture capture;
+    std::vector<cv::KeyPoint> processFrame();
+private:
     cv::Ptr<cv::SimpleBlobDetector> detector;
-    bool processFrame();
     void setupDetectorParams();
 };
 

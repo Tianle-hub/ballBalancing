@@ -1,7 +1,9 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
-
+#include<ball_blob_detector/ball_blob_detector.h>
+#include "ball_blob_detector/PosVel2D.h"
 #include <sstream>
+
 
 int main(int argc, char **argv)
 {
@@ -24,6 +26,12 @@ int main(int argc, char **argv)
    */
   ros::NodeHandle nh;
 
+  // Use the appropriate camera index 
+  // 0 for internal, 4 for usb camera in Tianle Laptop left
+  // 0 for PC in ics, top usb
+  int cameraIndex = 4;  
+  BallBlobDetector blob_detector(cameraIndex); 
+  
   /**
    * The advertise() function is how you tell ROS that you want to
    * publish on a given topic name. This invokes a call to the ROS
@@ -41,7 +49,8 @@ int main(int argc, char **argv)
    * than we can send them, the number here specifies how many messages to
    * buffer up before throwing some away.
    */
-  ros::Publisher ball_pub = nh.advertise<std_msgs::String>("ball", 1000);
+  ros::Publisher ball_pub = nh.advertise<ball_blob_detector::PosVel2D>("pos_vel", 1000);
+  ball_blob_detector::PosVel2D pv_msg;
 
   ros::Rate loop_rate(10);
 
@@ -55,13 +64,21 @@ int main(int argc, char **argv)
     /**
      * This is a message object. You stuff it with data, and then publish it.
      */
-    std_msgs::String msg;
+    // std_msgs::String msg;
+    std::vector<cv::KeyPoint> Blob = blob_detector.processFrame();
+    if (Blob.empty() || cv::waitKey(30) >= 0){
+        blob_detector.capture.release();
+        cv::destroyAllWindows();
+    }
+    pv_msg.position.x = Blob[0].pt.x;
+    pv_msg.position.y = Blob[0].pt.y;
+    pv_msg.velocity.linear.x = 0.5;
+    pv_msg.velocity.linear.y = -0.5;
+    // std::stringstream ss;
+    // ss << "hello world " << count;
+    // msg.data = ss.str();
 
-    std::stringstream ss;
-    ss << "hello world " << count;
-    msg.data = ss.str();
-
-    ROS_INFO("%s", msg.data.c_str());
+    // ROS_INFO("%s", msg.data.c_str());
 
     /**
      * The publish() function is how you send messages. The parameter
@@ -69,7 +86,7 @@ int main(int argc, char **argv)
      * given as a template parameter to the advertise<>() call, as was done
      * in the constructor above.
      */
-    ball_pub.publish(msg);
+    ball_pub.publish(pv_msg);
 
     ros::spinOnce();
 

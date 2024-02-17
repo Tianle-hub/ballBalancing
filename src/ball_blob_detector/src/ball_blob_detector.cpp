@@ -28,12 +28,12 @@ void BallBlobDetector::setupDetectorParams() {
     detector = cv::SimpleBlobDetector::create(params);
 }
 
-bool BallBlobDetector::processFrame() {
+std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
     cv::Mat frame;
     // Process frame...
     capture >> frame;
     if (frame.empty())
-        return false;
+        return std::vector<cv::KeyPoint>();
     cv::Mat hsvImage, ycrcbImage;
 
     // Convert the image from BGR to HSV color space
@@ -41,8 +41,6 @@ bool BallBlobDetector::processFrame() {
 
     // // Convert the same image from BGR to YCrCb color space
     // cv::cvtColor(frame, ycrcbImage, cv::COLOR_BGR2YCrCb);
-
-
 
     // Threshold the HSV image to get only red colors
     cv::Mat redMask1, redMask2, redMask_hsv;
@@ -72,7 +70,7 @@ bool BallBlobDetector::processFrame() {
     // Detect blobs on the red mask
     std::vector<cv::KeyPoint> keypoints;
     detector->detect(redMask_hsv, keypoints);   // maskYellowOrange, redMask_hsv
-
+    std::vector<cv::KeyPoint> largestBlob;
     if (!keypoints.empty()) {
         // Sort keypoints by size in descending order
         std::sort(keypoints.begin(), keypoints.end(), [](const cv::KeyPoint &a, const cv::KeyPoint &b) {
@@ -80,29 +78,32 @@ bool BallBlobDetector::processFrame() {
         });
 
         // Consider only the largest blob
-        std::vector<cv::KeyPoint> largestBlob;
         largestBlob.push_back(keypoints[0]);
 
         // Output the coordinates of the largest blob
         // std::cout << "Blob coordinates: " << largestBlob[0].pt.x << ", " << largestBlob[0].pt.y << std::endl;
-
+        
         // Draw detected blob as a red circle on the original frame
         cv::Mat im_with_keypoints;
         drawKeypoints(frame, largestBlob, im_with_keypoints, cv::Scalar(0,255,0), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
         // Show the result
         cv::imshow("Red Ball Detection", im_with_keypoints);
+        return largestBlob;
     }
-    return true;
+    cv::KeyPoint kp1(0, 0, 1, 45);
+    largestBlob.push_back(kp1);
+    return largestBlob;
 }
 
 void BallBlobDetector::run() {
     while (true) {
-        if (!processFrame()) break;
+        std::vector<cv::KeyPoint> Blob = processFrame();
+        if (Blob.empty()) break;
         if (cv::waitKey(30) >= 0) break;
     }
-    capture.release();
-    cv::destroyAllWindows();
+    // capture.release();
+    // cv::destroyAllWindows();
 }
 
 int main(int argc, char **argv) {
@@ -111,7 +112,7 @@ int main(int argc, char **argv) {
     // 0 for PC in ics, top usb
     int cameraIndex = 4;  
 
-    BallBlobDetector detector(cameraIndex); 
-    detector.run();
+    BallBlobDetector blob_detector(cameraIndex); 
+    blob_detector.run();
     return 0;
 }
