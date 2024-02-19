@@ -23,7 +23,7 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      ball_controller.initModel(Vector4d(0.2, -0.1, 0.2, -0.1), Vector2d(0, 0));
+      ball_controller.initModel(Vector4d(0.2, -0.1, 0.2, -0.1), Vector2d(0, 0));  // init_state, init_velocity
     }
 
     UR10EffortControl::~UR10EffortControl()
@@ -57,6 +57,7 @@ namespace tum_ics_ur_robot_lli
         return false;
       }
 
+      //////////////////////////////////// GET PID PARAMETER START ///////////////////////////
       // D GAINS
       ros::param::get(ns + "/joint/gains_d", vec);
       if (vec.size() < STD_DOF)
@@ -85,6 +86,8 @@ namespace tum_ics_ur_robot_lli
       }
       ROS_WARN_STREAM("Kp of joint space controller: \n" << Kp_j_);
 
+      //////////////////////////////////// GET PID PARAMETER END ///////////////////////////
+      
       // GOAL
       ros::param::get(ns + "/joint/goal", vec);
       if (vec.size() < STD_DOF)
@@ -179,8 +182,12 @@ namespace tum_ics_ur_robot_lli
         Vector2d u_ball_d = updateBallController(time.tD() - 20., state);
 
         // ball
-        // Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
-        Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
+
+        // end effector rotation move with ball
+        Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
+        
+        // end effector rotation stay still
+        //Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
 
         Vector6d x_goal;
 

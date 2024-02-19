@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   tf
+  message_generation
 )
 
 ##############################################################################
@@ -53,12 +54,11 @@ add_definitions(${EIGEN_DEFINITIONS})
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+# Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  PosVel2D.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -75,10 +75,11 @@ add_definitions(${EIGEN_DEFINITIONS})
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  
+  geometry_msgs # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -112,7 +113,7 @@ add_definitions(${EIGEN_DEFINITIONS})
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES my_ball_controller
- CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs
+ CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs message_runtime
 #  DEPENDS system_lib
 )
 

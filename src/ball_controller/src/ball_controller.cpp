@@ -1,5 +1,5 @@
 #include <ball_controller/ball_controller.h>
-
+// #include "ball_controller/PosVel2D.h"
 namespace BallControl
 {
   BallController::BallController()
@@ -15,7 +15,7 @@ namespace BallControl
   bool BallController::initModel(const Eigen::Vector4d &x, const Eigen::Vector2d &input)
   {
     ROS_WARN_STREAM("BallController::init");
-    std::vector<double> vec;
+    std::vector<double> vec;  // Vector to store the retrieved values
 
     // check namespace
     std::string ns = "~ball_controller";
@@ -146,5 +146,14 @@ namespace BallControl
     q.setRPY(0,0,0);
     transform.setRotation(q);
     br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_6", "ball"));
+  }
+
+  void BallController::ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel)
+  {
+    ball_pos_x = ball_pos_vel.position.x;
+    ball_pos_y = ball_pos_vel.position.y;
+    ball_velo_x = ball_pos_vel.velocity.linear.x;
+    ball_velo_y = ball_pos_vel.velocity.linear.y;
+    ROS_INFO("I heard: Position - [%f, %f], Velocity - [%f, %f]", ball_pos_x, ball_pos_y, ball_velo_x, ball_velo_y);
   }
 }
