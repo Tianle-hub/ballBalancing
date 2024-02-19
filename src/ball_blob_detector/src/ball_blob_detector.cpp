@@ -34,6 +34,11 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
     capture >> frame;
     if (frame.empty())
         return std::vector<cv::KeyPoint>();
+
+    int width = frame.cols;  //640
+    int height = frame.rows; //480
+    // std::cout << "Image size: " <<width<<","<<height<<std::endl; 
+
     cv::Mat hsvImage, ycrcbImage;
 
     // Convert the image from BGR to HSV color space
@@ -82,13 +87,16 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
 
         // Output the coordinates of the largest blob
         // std::cout << "Blob coordinates: " << largestBlob[0].pt.x << ", " << largestBlob[0].pt.y << std::endl;
-        
+
+
         // Draw detected blob as a red circle on the original frame
         cv::Mat im_with_keypoints;
         drawKeypoints(frame, largestBlob, im_with_keypoints, cv::Scalar(0,255,0), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
         // Show the result
         cv::imshow("Red Ball Detection", im_with_keypoints);
+        largestBlob[0].pt.x = (largestBlob[0].pt.x - width/2)/width; 
+        largestBlob[0].pt.y = (largestBlob[0].pt.y - height/2)/height;
         return largestBlob;
     }
     cv::KeyPoint kp1(0, 0, 1, 45);

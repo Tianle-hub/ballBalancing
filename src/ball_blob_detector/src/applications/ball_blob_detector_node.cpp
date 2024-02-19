@@ -49,7 +49,7 @@ int main(int argc, char **argv)
    * than we can send them, the number here specifies how many messages to
    * buffer up before throwing some away.
    */
-  ros::Publisher ball_pub = nh.advertise<ball_blob_detector::PosVel2D>("pos_vel", 1000);
+  ros::Publisher ball_pub = nh.advertise<ball_blob_detector::PosVel2D>("ball_pos_vel", 1000);
   ball_blob_detector::PosVel2D pv_msg;
 
   ros::Rate loop_rate(10);
