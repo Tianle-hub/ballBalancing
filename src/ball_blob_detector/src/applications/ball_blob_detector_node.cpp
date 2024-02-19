@@ -74,11 +74,6 @@ int main(int argc, char **argv)
     pv_msg.position.y = Blob[0].pt.y;
     pv_msg.velocity.linear.x = 0.5;
     pv_msg.velocity.linear.y = -0.5;
-    // std::stringstream ss;
-    // ss << "hello world " << count;
-    // msg.data = ss.str();
-
-    // ROS_INFO("%s", msg.data.c_str());
 
     /**
      * The publish() function is how you send messages. The parameter
