@@ -114,26 +114,30 @@ namespace BallControl
     t_prev_ = time;
 
     u_ = input;
+    ROS_INFO("ball controller frequency: %f", 1/timeStep);
+    // integrate(timeStep);
+
+    // geometry_msgs::Vector3Stamped ball_position;
+    // geometry_msgs::Vector3Stamped ball_velocity;
+
+    // ball_position.header.stamp = ros::Time::now();
+    // ball_velocity.header.stamp = ros::Time::now();
+
+    // ball_position.vector.x = x_(0);
+    // ball_position.vector.y = x_(2);
+
+    // ball_velocity.vector.x = x_(1);
+    // ball_velocity.vector.y = x_(3);
+
+    // position_pb_.publish(ball_position);
+    // velocity_pb_.publish(ball_velocity);
+
     
-    integrate(timeStep);
-
-    geometry_msgs::Vector3Stamped ball_position;
-    geometry_msgs::Vector3Stamped ball_velocity;
-
-    ball_position.header.stamp = ros::Time::now();
-    ball_velocity.header.stamp = ros::Time::now();
-
-    ball_position.vector.x = x_(0);
-    ball_position.vector.y = x_(2);
-
-    ball_velocity.vector.x = x_(1);
-    ball_velocity.vector.y = x_(3);
-
-    position_pb_.publish(ball_position);
-    velocity_pb_.publish(ball_velocity);
-
+    x_(0) = ball_pos_x;
+    x_(1) = ball_velo_x;
+    x_(2) = ball_pos_y;
+    x_(3) = ball_velo_y;
     pubBallTF();
-
     return x_;
   }
 
@@ -155,5 +159,6 @@ namespace BallControl
     ball_velo_x = ball_pos_vel.velocity.linear.x;
     ball_velo_y = ball_pos_vel.velocity.linear.y;
     ROS_INFO("I heard: Position - [%f, %f], Velocity - [%f, %f]", ball_pos_x, ball_pos_y, ball_velo_x, ball_velo_y);
+
   }
 }

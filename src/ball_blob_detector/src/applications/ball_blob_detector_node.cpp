@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   // Use the appropriate camera index 
   // 0 for internal, 4 for usb camera in Tianle Laptop left
   // 0 for PC in ics, top usb
-  int cameraIndex = 4;  
+  int cameraIndex = 0;  
   BallBlobDetector blob_detector(cameraIndex); 
   
   /**
@@ -70,11 +70,24 @@ int main(int argc, char **argv)
         blob_detector.capture.release();
         cv::destroyAllWindows();
     }
+
+
+    double time = ros::Time::now().toSec();
+    
     pv_msg.position.x = Blob[0].pt.x;
     pv_msg.position.y = Blob[0].pt.y;
-    pv_msg.velocity.linear.x = 0.5;
-    pv_msg.velocity.linear.y = -0.5;
 
+    double x_prev = blob_detector.getPosXPrev();
+    double y_prev = blob_detector.getPosYPrev();
+    double time_prev = blob_detector.getTimePrev();
+    pv_msg.velocity.linear.x = (pv_msg.position.x - x_prev)/(time -  time_prev);
+    pv_msg.velocity.linear.y = (pv_msg.position.y - y_prev)/(time -  time_prev);
+    // ROS_INFO("camera frequency: %f", 1/(time -  time_prev));
+    // std::cout<<"camera frequency:"<<1/(time -  time_prev)<<std::endl;
+    blob_detector.setPosXPrev(Blob[0].pt.x);
+    blob_detector.setPosYPrev(Blob[0].pt.y);
+    blob_detector.setTimePrev(time);
+    
     /**
      * The publish() function is how you send messages. The parameter
      * is the message object. The type of this object must agree with the type
