@@ -158,6 +158,8 @@ namespace BallControl
     ball_pos_y = ball_pos_vel.position.y;
     ball_velo_x = ball_pos_vel.velocity.linear.x;
     ball_velo_y = ball_pos_vel.velocity.linear.y;
+    measure = ball_pos_vel.measure;
+    ROS_INFO_STREAM("Measurement: " << measure);
     ROS_INFO("I heard: Position - [%f, %f], Velocity - [%f, %f]", ball_pos_x, ball_pos_y, ball_velo_x, ball_velo_y);
 
   }

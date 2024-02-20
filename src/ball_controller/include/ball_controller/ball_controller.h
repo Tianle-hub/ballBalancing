@@ -39,6 +39,7 @@ namespace BallControl
       double ball_pos_y;
       double ball_velo_x;
       double ball_velo_y;
+      bool measure;
 
       // double ball_pos_x_prev = 0;
       // double ball_pos_y_prev = 0;

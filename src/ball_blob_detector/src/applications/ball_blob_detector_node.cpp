@@ -80,8 +80,10 @@ int main(int argc, char **argv)
     double x_prev = blob_detector.getPosXPrev();
     double y_prev = blob_detector.getPosYPrev();
     double time_prev = blob_detector.getTimePrev();
+    bool measure = blob_detector.getMeasure();
     pv_msg.velocity.linear.x = (pv_msg.position.x - x_prev)/(time -  time_prev);
     pv_msg.velocity.linear.y = (pv_msg.position.y - y_prev)/(time -  time_prev);
+    pv_msg.measure = measure;
     // ROS_INFO("camera frequency: %f", 1/(time -  time_prev));
     // std::cout<<"camera frequency:"<<1/(time -  time_prev)<<std::endl;
     blob_detector.setPosXPrev(Blob[0].pt.x);

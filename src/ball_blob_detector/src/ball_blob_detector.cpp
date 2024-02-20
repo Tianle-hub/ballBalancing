@@ -97,8 +97,10 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
         cv::imshow("Red Ball Detection", im_with_keypoints);
         largestBlob[0].pt.x = (largestBlob[0].pt.x - width/2)/width; 
         largestBlob[0].pt.y = (largestBlob[0].pt.y - height/2)/height;
+        measure = true;
         return largestBlob;
     }
+    measure = false;
     cv::KeyPoint kp1(0, 0, 1, 45);
     largestBlob.push_back(kp1);
     return largestBlob;
