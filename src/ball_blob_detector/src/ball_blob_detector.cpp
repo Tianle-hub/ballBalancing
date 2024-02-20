@@ -19,7 +19,7 @@ void BallBlobDetector::setupDetectorParams() {
     // Initialize parameters...
     params.filterByArea = true;
     params.minArea = 100;
-    params.maxArea = 10000;
+    params.maxArea = 50000;
     params.filterByCircularity = true;
     params.filterByColor = true;
     params.blobColor = 255;
@@ -77,8 +77,33 @@ Eigen::Vector2d BallBlobDetector::plateCenterDetection(){
 
 }
 
+void BallBlobDetector::setupPlateCoordinate(){
+    capture.retrieve(frame);
+    frame.copyTo(imageCopy);
+    cv::aruco::detectMarkers(frame, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
+
+    // If markers are detected, draw them on the image
+    if (!markerIds.empty()) {
+        cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
+        
+        std::vector<cv::Vec3d> rvecs, tvecs;
+        cv::aruco::estimatePoseSingleMarkers(markerCorners, markerSideLength, cameraMatrix, distCoeffs, rvecs, tvecs);
+        
+        // Draw axis for each marker
+        for (int i = 0; i < markerIds.size(); i++) {
+            cv::aruco::drawAxis(imageCopy, cameraMatrix, distCoeffs, rvecs[i], tvecs[i], markerSideLength * 0.5f);
+            std::cout<<"markerIds:"<<markerIds[i]<<std::endl;
+            std::cout << "Rotation Vector (rvecs): [" << rvecs[i][0] << ", " << rvecs[i][1] << ", " << rvecs[i][2] << "]" << std::endl;
+            std::cout << "Translation Vector (tvecs): [" << tvecs[i][0] << ", " << tvecs[i][1] << ", " << tvecs[i][2] << "]" << std::endl;
+            std::cout << "Corner0" << ": (" << markerCorners[i][0].x << ", " << markerCorners[i][0].y << ")" << std::endl;
+        }
+    }
+
+    cv::imshow("Detected ArUco markers", imageCopy);
+}
+
 std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
-    cv::Mat frame;
+    // cv::Mat frame;
     // Process frame...
     capture >> frame;
     if (frame.empty())
@@ -122,12 +147,12 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
 
     // Morphological operations
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-    cv::morphologyEx(maskYellowOrange, redMask_hsv, cv::MORPH_CLOSE, kernel);  // maskYellowOrange, redMask_hsv
-    cv::morphologyEx(maskYellowOrange, redMask_hsv, cv::MORPH_OPEN, kernel);   // maskYellowOrange, redMask_hsv
+    cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_CLOSE, kernel);  // maskYellowOrange, redMask_hsv
+    cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_OPEN, kernel);   // maskYellowOrange, redMask_hsv
 
     // Detect blobs on the red mask
     std::vector<cv::KeyPoint> keypoints;
-    detector->detect(maskYellowOrange, keypoints);   // maskYellowOrange, redMask_hsv
+    detector->detect(redMask_hsv, keypoints);   // maskYellowOrange, redMask_hsv
     std::vector<cv::KeyPoint> largestBlob;
     if (!keypoints.empty()) {
         // Sort keypoints by size in descending order
@@ -137,10 +162,8 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
 
         // Consider only the largest blob
         largestBlob.push_back(keypoints[0]);
-
-        // Output the coordinates of the largest blob
-        // std::cout << "Blob coordinates: " << largestBlob[0].pt.x << ", " << largestBlob[0].pt.y << std::endl;
-
+        float largestBlobRadius = largestBlob[0].size;
+        std::cout<<"largestBlobRadius:"<<largestBlobRadius<<std::endl;
 
         // Draw detected blob as a red circle on the original frame
         cv::Mat im_with_keypoints;
@@ -150,6 +173,9 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
         cv::imshow("Red Ball Detection", im_with_keypoints);
         largestBlob[0].pt.x = (largestBlob[0].pt.x - width/2)/width; 
         largestBlob[0].pt.y = (largestBlob[0].pt.y - height/2)/height;
+        // Output the coordinates of the largest blob
+        std::cout << "Blob coordinates: " << largestBlob[0].pt.x << ", " << largestBlob[0].pt.y << std::endl;
+
         measure = true;
         return largestBlob;
     }
@@ -162,6 +188,7 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
 void BallBlobDetector::run() {
     while (true) {
         std::vector<cv::KeyPoint> Blob = processFrame();
+        setupPlateCoordinate();
         // Eigen::Vector2d center = plateCenterDetection();
         if (Blob.empty()) break;
         if (cv::waitKey(30) >= 0) break;
@@ -174,7 +201,7 @@ int main(int argc, char **argv) {
     // Use the appropriate camera index 
     // 0 for internal, 4 for usb camera in Tianle Laptop left
     // 0 for PC in ics, top usb
-    int cameraIndex = 0;  
+    int cameraIndex = 4;  
 
     BallBlobDetector blob_detector(cameraIndex); 
     blob_detector.run();
