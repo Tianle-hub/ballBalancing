@@ -4,7 +4,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d.hpp>
-
+#include <Eigen/Dense> 
 class BallBlobDetector {
 public:
     BallBlobDetector(int cameraIndex);
@@ -19,6 +19,7 @@ public:
     void run();
     cv::VideoCapture capture;
     std::vector<cv::KeyPoint> processFrame();
+    Eigen::Vector2d plateCenterDetection();
 
 private:
     cv::Ptr<cv::SimpleBlobDetector> detector;
@@ -27,6 +28,8 @@ private:
     double pos_y_prev = 0;
     double time_prev = 0;
     bool measure;
+    double centerX = 0;
+    double centerY = 0;
 };
 
 #endif // BALL_BLOB_DETECTOR_H

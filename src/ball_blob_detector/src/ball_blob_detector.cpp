@@ -28,6 +28,55 @@ void BallBlobDetector::setupDetectorParams() {
     detector = cv::SimpleBlobDetector::create(params);
 }
 
+Eigen::Vector2d BallBlobDetector::plateCenterDetection(){
+
+    cv::Mat frame;
+    // Capture frame-by-frame
+    capture >> frame;
+
+    // If the frame is empty, break immediately
+    if (frame.empty())
+        return Eigen::Vector2d::Zero();
+
+    // Convert to grayscale
+    cv::Mat gray;
+    cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+
+    // Apply Gaussian blur
+    cv::Mat blurred;
+    cv::GaussianBlur(gray, blurred, cv::Size(5, 5), 0);
+
+    // Detect edges using Canny
+    cv::Mat edges;
+    cv::Canny(blurred, edges, 50, 150, 3);
+
+    // Find contours
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(edges, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+    for (const auto& contour : contours) {
+        // Approximate the contour to a polygon
+        std::vector<cv::Point> polygon;
+        cv::approxPolyDP(contour, polygon, cv::arcLength(contour, true) * 0.02, true);
+
+        // Check if the polygon can be considered a rectangle
+        if (polygon.size() == 4) {
+            // Calculate the center of the rectangle
+            cv::Moments m = cv::moments(contour);
+            centerX = (int)(m.m10 / m.m00);
+            centerY = (int)(m.m01 / m.m00);
+
+            // Optionally, draw the contour and a circle at the center
+            cv::drawContours(frame, std::vector<std::vector<cv::Point>>{polygon}, 0, cv::Scalar(0, 255, 0), 3);
+            cv::circle(frame, cv::Point(centerX, centerY), 5, cv::Scalar(255, 0, 0), -1);
+        }
+    }
+    // Display the resulting frame
+    cv::imshow("Frame", frame);
+    return Eigen::Vector2d(centerX, centerY);
+
+}
+
 std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
     cv::Mat frame;
     // Process frame...
@@ -56,10 +105,14 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
     // Adjust the hue values to target yellow to orange. 
     // These values might need to be fine-tuned based on your specific lighting conditions and the exact color of the ball.
     cv::inRange(hsvImage, cv::Scalar(15, 70, 50), cv::Scalar(30, 255, 255), maskYellowOrange);
+    
+    cv::Mat maskOrange;
+    cv::inRange(hsvImage, cv::Scalar(10, 100, 20), cv::Scalar(22, 255, 255), maskOrange);
 
-
+    // cv::imshow("maskOrange", maskOrange);
     cv::bitwise_or(redMask1, redMask2, redMask_hsv);
 
+    // cv::Mat maskedFrame;
     // // Threshold for red color in YCrCb space
     // cv::Mat redMask_YCrCb;
     // cv::inRange(ycrcbImage, cv::Scalar(0, 133, 77), cv::Scalar(255, 173, 127), redMask_YCrCb);
@@ -69,12 +122,12 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
 
     // Morphological operations
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-    cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_CLOSE, kernel);  // maskYellowOrange, redMask_hsv
-    cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_OPEN, kernel);   // maskYellowOrange, redMask_hsv
+    cv::morphologyEx(maskYellowOrange, redMask_hsv, cv::MORPH_CLOSE, kernel);  // maskYellowOrange, redMask_hsv
+    cv::morphologyEx(maskYellowOrange, redMask_hsv, cv::MORPH_OPEN, kernel);   // maskYellowOrange, redMask_hsv
 
     // Detect blobs on the red mask
     std::vector<cv::KeyPoint> keypoints;
-    detector->detect(redMask_hsv, keypoints);   // maskYellowOrange, redMask_hsv
+    detector->detect(maskYellowOrange, keypoints);   // maskYellowOrange, redMask_hsv
     std::vector<cv::KeyPoint> largestBlob;
     if (!keypoints.empty()) {
         // Sort keypoints by size in descending order
@@ -109,6 +162,7 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame() {
 void BallBlobDetector::run() {
     while (true) {
         std::vector<cv::KeyPoint> Blob = processFrame();
+        // Eigen::Vector2d center = plateCenterDetection();
         if (Blob.empty()) break;
         if (cv::waitKey(30) >= 0) break;
     }
@@ -120,7 +174,7 @@ int main(int argc, char **argv) {
     // Use the appropriate camera index 
     // 0 for internal, 4 for usb camera in Tianle Laptop left
     // 0 for PC in ics, top usb
-    int cameraIndex = 4;  
+    int cameraIndex = 0;  
 
     BallBlobDetector blob_detector(cameraIndex); 
     blob_detector.run();

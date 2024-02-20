@@ -65,7 +65,12 @@ int main(int argc, char **argv)
      * This is a message object. You stuff it with data, and then publish it.
      */
     // std_msgs::String msg;
+
+    // plate center 
+
     std::vector<cv::KeyPoint> Blob = blob_detector.processFrame();
+    // Eigen::Vector2d plate_center = blob_detector.plateCenterDetection();
+
     if (Blob.empty() || cv::waitKey(30) >= 0){
         blob_detector.capture.release();
         cv::destroyAllWindows();

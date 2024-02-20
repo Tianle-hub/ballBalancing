@@ -181,6 +181,7 @@ endforeach()
 
 add_executable(ball_blob_detector_test src/ball_blob_detector.cpp)
 add_executable(camera_test src/camera_test.cpp)
+add_executable(aruco_generate src/ArUcoGenerator.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -209,6 +210,13 @@ target_link_libraries(
 
 target_link_libraries( 
   camera_test
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
+
+target_link_libraries( 
+  aruco_generate
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
   ${OpenCV_LIBS}
