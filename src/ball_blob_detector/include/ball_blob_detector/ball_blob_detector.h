@@ -32,10 +32,10 @@ private:
     double pos_x_prev = 0;
     double pos_y_prev = 0;
     double time_prev = 0;
-    bool measure;
+    bool measure = false;
     double centerX = 0;
     double centerY = 0;
-
+    std::vector<cv::KeyPoint> Blob;
     // aruco_marker
     // Placeholder values for camera calibration
     float markerSideLength = 0.048; // Replace with actual marker side length in meters
@@ -48,6 +48,26 @@ private:
     cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
 
+    double PlateLengthMeter = 0.31;
+    double PlateWidthMeter = 0.22;
+
+    double plate_length_upper_bound = 0.3;
+    double plate_length_lower_bound = 0.25;
+    double plate_width_upper_bound = 0.2;
+    double plate_width_lower_bound = 0.16;
+
+    double CenterLength = 0;
+    double CenterWidth = 0;
+    Eigen::Matrix<double, 4, 2> MarkerPixelCenter;
+    Eigen::Matrix<double, 2, 1> PlatePixelCenter;
+    Eigen::Matrix<double, 2, 1> PlatePixelSize;
+    bool calibration = true;
+    double k_pixel_length = 0;
+    double k_pixel_width = 0;
+
+    Eigen::Matrix<double, 2, 1> PlatePixelCenter_fixed; 
+    double k_pixel_length_fixed = 0;
+    double k_pixel_width_fixed = 0;
 
 };
 
