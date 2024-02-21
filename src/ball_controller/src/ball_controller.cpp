@@ -1,5 +1,6 @@
 #include <ball_controller/ball_controller.h>
 // #include "ball_controller/PosVel2D.h"
+
 namespace BallControl
 {
   BallController::BallController()
@@ -12,134 +13,56 @@ namespace BallControl
 
   }
 
-  bool BallController::initModel(const Eigen::Vector4d &x, const Eigen::Vector2d &input)
+  bool BallController::init(const Eigen::Vector4d &x, const BallType ballType)
   {
-    ROS_WARN_STREAM("BallController::init");
-    std::vector<double> vec;  // Vector to store the retrieved values
+    ballType_ = ballType;
 
-    // check namespace
-    std::string ns = "~ball_controller";
-    if (!ros::param::has(ns))
+    switch(ballType_)
     {
-      ROS_ERROR_STREAM("BallController init(): Model parameters not defined in:" << ns);
-      return false;
-    }
-
-    // A
-    ros::param::get(ns + "/A", vec);
-    if (vec.size() < 16)
-    {
-      ROS_ERROR_STREAM("A : wrong number of dimensions:" << vec.size());
-      return false;
-    }
-    size_t k = 0;
-    for (size_t i = 0; i < 4; i++)
-    {
-      for (size_t j = 0; j < 4; j++)
-      {
-      A_(i, j) = vec[k];
-      k++;
-      }
-    }
-    ROS_WARN_STREAM("A: \n" << A_);
-
-    // B
-    ros::param::get(ns + "/B", vec);
-    if (vec.size() < 8)
-    {
-      ROS_ERROR_STREAM("B : wrong number of dimensions:" << vec.size());
-      return false;
-    }
-    k = 0;
-    for (size_t i = 0; i < 4; i++)
-    {
-      for (size_t j = 0; j < 2; j++)
-      {
-      B_(i, j) = vec[k];
-      k++;
-      }
-    }
-    ROS_WARN_STREAM("B: \n" << B_);
-
-    // B
-    ros::param::get(ns + "/K", vec);
-    if (vec.size() < 8)
-    {
-      ROS_ERROR_STREAM("K : wrong number of dimensions:" << vec.size());
-      return false;
-    }
-    k = 0;
-    for (size_t i = 0; i < 2; i++)
-    {
-      for (size_t j = 0; j < 4; j++)
-      {
-      K_(i, j) = vec[k];
-      k++;
-      }
-    }
-    ROS_WARN_STREAM("K: \n" << K_);
-
+      case MODEL:
+        ballModel_.initModel(x);
+        break;
+      
+      case CAMERA:
+        KalmanFilter_.init(Eigen::Matrix<double,8,1>::Zero());
+        break;
+    }    
     // state
     x_ = x;
     // input
-    u_ = input;
-    t_prev_ = 0;
+    u_d_ = Eigen::Vector2d::Zero();
+
+    initK();
 
     position_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
     velocity_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
+    camera_sub_ = nh_.subscribe("ball_pos_vel", 1000, &BallController::ball_pos_vel_Callback, this);
 
     return true;
   }
 
-  void BallController::setZero()
+
+  Eigen::Vector2d BallController::update(const double &time, const Eigen::Vector2d &u)
   {
-    x_ = Eigen::Vector4d::Zero();
-    u_ = Eigen::Vector2d::Zero();
-  }
+    switch(ballType_)
+    {
+      case MODEL:
+        x_ = ballModel_.updateModel(time, u);
+        break;
+      
+      case CAMERA:
+        KalmanFilter_.predict();
+        KalmanFilter_.updateAcc(u);
+        x_ = KalmanFilter_.getPosVel();
+        break;
+    }
 
-  void BallController::integrate(const double &timeStep)
-  {
-    Eigen::Vector4d xp = A_ * x_ + B_ * Eigen::Vector2d(sin(u_(0)), sin(u_(1)));
-    x_ += xp * timeStep;
-  }
-
-  Eigen::Vector2d BallController::update(const Eigen::Vector4d &x)
-  {
-    return -K_ * x;
-  }
-
-  Eigen::Vector4d BallController::updateModel(const double &time, const Eigen::Vector2d &input)
-  {
-    double timeStep = time - t_prev_;
-    t_prev_ = time;
-
-    u_ = input;
-    ROS_INFO("ball controller frequency: %f", 1/timeStep);
-    // integrate(timeStep);
-
-    // geometry_msgs::Vector3Stamped ball_position;
-    // geometry_msgs::Vector3Stamped ball_velocity;
-
-    // ball_position.header.stamp = ros::Time::now();
-    // ball_velocity.header.stamp = ros::Time::now();
-
-    // ball_position.vector.x = x_(0);
-    // ball_position.vector.y = x_(2);
-
-    // ball_velocity.vector.x = x_(1);
-    // ball_velocity.vector.y = x_(3);
-
-    // position_pb_.publish(ball_position);
-    // velocity_pb_.publish(ball_velocity);
-
-    
-    x_(0) = ball_pos_x;
-    x_(1) = ball_velo_x;
-    x_(2) = ball_pos_y;
-    x_(3) = ball_velo_y;
     pubBallTF();
-    return x_;
+
+    u_d_ = -K_ * x_;
+    return u_d_;
   }
+
 
   void BallController::pubBallTF()
   {
@@ -154,6 +77,10 @@ namespace BallControl
 
   void BallController::ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel)
   {
+    if (ball_pos_vel.measure == true)
+    {
+      KalmanFilter_.updatePos(Eigen::Vector2d::Zero());
+    }
     ball_pos_x = ball_pos_vel.position.x;
     ball_pos_y = ball_pos_vel.position.y;
     ball_velo_x = ball_pos_vel.velocity.linear.x;
@@ -161,6 +88,42 @@ namespace BallControl
     measure = ball_pos_vel.measure;
     ROS_INFO_STREAM("Measurement: " << measure);
     ROS_INFO("I heard: Position - [%f, %f], Velocity - [%f, %f]", ball_pos_x, ball_pos_y, ball_velo_x, ball_velo_y);
+  }
 
+  Eigen::Vector4d BallController::getState()
+  {
+    return x_;
+  }
+
+  bool BallController::initK()
+  {
+    ROS_WARN_STREAM("BallController::init");
+    std::vector<double> vec;  // Vector to store the retrieved values
+
+    // check namespace
+    std::string ns = "~ball_controller";
+    if (!ros::param::has(ns))
+    {
+      ROS_ERROR_STREAM("BallController init(): LQR parameters not defined in:" << ns);
+      return false;
+    }
+    ros::param::get(ns + "/K", vec);
+    if (vec.size() < 8)
+    {
+      ROS_ERROR_STREAM("K : wrong number of dimensions:" << vec.size());
+      return false;
+    }
+    size_t k = 0;
+    for (size_t i = 0; i < 2; i++)
+    {
+      for (size_t j = 0; j < 4; j++)
+      {
+      K_(i, j) = vec[k];
+      k++;
+      }
+    }
+    ROS_WARN_STREAM("K: \n" << K_);
+
+    return true;
   }
 }
