@@ -88,15 +88,73 @@ void BallBlobDetector::setupPlateCoordinate(){
         
         std::vector<cv::Vec3d> rvecs, tvecs;
         cv::aruco::estimatePoseSingleMarkers(markerCorners, markerSideLength, cameraMatrix, distCoeffs, rvecs, tvecs);
-        
-        // Draw axis for each marker
-        for (int i = 0; i < markerIds.size(); i++) {
-            cv::aruco::drawAxis(imageCopy, cameraMatrix, distCoeffs, rvecs[i], tvecs[i], markerSideLength * 0.5f);
-            std::cout<<"markerIds:"<<markerIds[i]<<std::endl;
-            std::cout << "Rotation Vector (rvecs): [" << rvecs[i][0] << ", " << rvecs[i][1] << ", " << rvecs[i][2] << "]" << std::endl;
-            std::cout << "Translation Vector (tvecs): [" << tvecs[i][0] << ", " << tvecs[i][1] << ", " << tvecs[i][2] << "]" << std::endl;
-            std::cout << "Corner0" << ": (" << markerCorners[i][0].x << ", " << markerCorners[i][0].y << ")" << std::endl;
+        if (markerIds.size()==4){
+            ROS_INFO("Four Marker detected");
+            // Marker sequence
+            // 0 ------ 1
+            // |        |
+            // |        |
+            // 2 ------ 3
+
+            // Corner sequence
+            // 0 ------ 1
+            // |        |
+            // |        |
+            // 3 ------ 2
+
+            double CenterLength = abs(tvecs[1][0] - tvecs[0][0]);
+            double CenterWidth = abs(tvecs[0][1] - tvecs[2][1]);
+
+            // Get marker center 
+            Eigen::Matrix<double, 4, 2> MarkerCenter;
+            for(size_t i = 0; i < markerCorners.size(); i++) {
+                float centerX = 0.0, centerY = 0.0;
+                for(size_t j = 0; j < markerCorners[i].size(); j++) {
+                    centerX += markerCorners[i][j].x;
+                    centerY += markerCorners[i][j].y;
+                }
+                centerX /= markerCorners[i].size();
+                centerY /= markerCorners[i].size();
+                MarkerCenter(i,0) = centerX;
+                MarkerCenter(i,1) = centerY;
+
+                std::cout << "Marker ID: " << markerIds[i] << " Center: (" << centerX << ", " << centerY << ")" << std::endl;
+            }
+            std::cout<<"center distance estimate:"<<CenterLength<<", "<<CenterWidth<<std::endl;
+
+            // // upper_right - upper left to get horzional lenth
+            // double platePixelLength = markerCorners[1][1].x - markerCorners[0][0].x;  
+            // // upper_left - down left to get vertical width
+            // double platePixelWidth = markerCorners[0][0].y - markerCorners[2][3].y;
+
+            // cv::Point2f PlateUpperLeft = markerCorners[0][0];
+            // cv::Point2f PlateUpperRight = markerCorners[1][1];
+            // cv::Point2f PlateLowerLeft = markerCorners[2][3];
+            // cv::Point2f PlateLowerRight = markerCorners[3][2];
+            // double PlateLengthMeter = 0.31;
+            // double PlateWidthMeter = 0.22;
+
+            // double k_pixel_length = PlateLengthMeter/ platePixelLength;
+            // double k_pixel_width = PlateWidthMeter/ platePixelWidth;
+            // std::cout<<"k_pixel: "<<k_pixel_length<<", "<<k_pixel_width<<std::endl;
+
+            // Eigen::Vector2d PlateCenterPixel; 
+            // PlateCenterPixel<<(PlateUpperLeft.x + PlateLowerRight.x)/2, (PlateUpperLeft.y + PlateLowerRight.y)/2;
+            
+            // Eigen::Vector2d BallPosPixel;
+            // BallPosPixel<<200,200; //for test
+
+            
+            // Draw axis for each marker
+            for (int i = 0; i < markerIds.size(); i++) {
+                cv::aruco::drawAxis(imageCopy, cameraMatrix, distCoeffs, rvecs[i], tvecs[i], markerSideLength * 0.5f);
+                // std::cout<<"markerIds:"<<markerIds[i]<<std::endl;
+                // std::cout << "Rotation Vector (rvecs): [" << rvecs[i][0] << ", " << rvecs[i][1] << ", " << rvecs[i][2] << "]" << std::endl;
+                // std::cout << "Translation Vector (tvecs): [" << tvecs[i][0] << ", " << tvecs[i][1] << ", " << tvecs[i][2] << "]" << std::endl;
+                // std::cout << "Corner0" << ": (" << markerCorners[i][0].x << ", " << markerCorners[i][0].y << ")" << std::endl;
+            }
         }
+
     }
 
     cv::imshow("Detected ArUco markers", imageCopy);
