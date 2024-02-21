@@ -202,10 +202,10 @@ void BallBlobDetector::setupPlateCoordinate()
             }
 
         }// marker 4
-
+        
     } // !markerId.empty
-
     cv::imshow("Detected ArUco markers", imageCopy);
+    
     // if (cv::waitKey(30) >= 0)
     //     break;
 }

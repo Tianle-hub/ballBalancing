@@ -62,6 +62,7 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
     blob_detector.setupPlateCoordinate();
+
     if(!blob_detector.calibration)
     {
       Blob= blob_detector.processFrame();

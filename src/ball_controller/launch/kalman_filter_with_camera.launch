@@ -2,10 +2,12 @@
 
 <launch>
 
-  <node name="kalman_filter_test_with_camera" pkg="ball_controller" type="kalman_filter_test_with_camera" output="screen">
+  <!-- <node name="kalman_filter_test_with_camera" pkg="ball_controller" type="kalman_filter_test_with_camera" output="screen">
 
     <rosparam file="$(find ball_controller)/configs/kalman_filter.yaml" command="load" />
     
-  </node>
+  </node> -->
+
+  <node name="ball_blob_detector" pkg="ball_blob_detector" type="ball_blob_detector_node"/>
 
 </launch>
