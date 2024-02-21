@@ -61,47 +61,46 @@ int main(int argc, char **argv)
   int count = 0;
   while (ros::ok())
   {
-    /**
-     * This is a message object. You stuff it with data, and then publish it.
-     */
-    // std_msgs::String msg;
-
-    // plate center 
-
-    std::vector<cv::KeyPoint> Blob = blob_detector.processFrame();
-    // Eigen::Vector2d plate_center = blob_detector.plateCenterDetection();
-
-    if (Blob.empty() || cv::waitKey(30) >= 0){
+    blob_detector.setupPlateCoordinate();
+    if(!blob_detector.calibration)
+    {
+      Blob= blob_detector.processFrame();
+      if (Blob.empty() || cv::waitKey(30) >= 0){
         blob_detector.capture.release();
         cv::destroyAllWindows();
+      }
+
+      double time = ros::Time::now().toSec();
+      
+      pv_msg.position.x = Blob[0].pt.x;
+      pv_msg.position.y = Blob[0].pt.y;
+
+      double x_prev = blob_detector.getPosXPrev();
+      double y_prev = blob_detector.getPosYPrev();
+      double time_prev = blob_detector.getTimePrev();
+      bool measure = blob_detector.getMeasure();
+      pv_msg.velocity.linear.x = (pv_msg.position.x - x_prev)/(time -  time_prev);
+      pv_msg.velocity.linear.y = (pv_msg.position.y - y_prev)/(time -  time_prev);
+      pv_msg.measure = measure;
+      // ROS_INFO("camera frequency: %f", 1/(time -  time_prev));
+      // std::cout<<"camera frequency:"<<1/(time -  time_prev)<<std::endl;
+      blob_detector.setPosXPrev(Blob[0].pt.x);
+      blob_detector.setPosYPrev(Blob[0].pt.y);
+      blob_detector.setTimePrev(time);
+      
+      /**
+       * The publish() function is how you send messages. The parameter
+       * is the message object. The type of this object must agree with the type
+       * given as a template parameter to the advertise<>() call, as was done
+       * in the constructor above.
+       */
+      ball_pub.publish(pv_msg);
     }
 
 
-    double time = ros::Time::now().toSec();
-    
-    pv_msg.position.x = Blob[0].pt.x;
-    pv_msg.position.y = Blob[0].pt.y;
+    // Eigen::Vector2d plate_center = blob_detector.plateCenterDetection();
 
-    double x_prev = blob_detector.getPosXPrev();
-    double y_prev = blob_detector.getPosYPrev();
-    double time_prev = blob_detector.getTimePrev();
-    bool measure = blob_detector.getMeasure();
-    pv_msg.velocity.linear.x = (pv_msg.position.x - x_prev)/(time -  time_prev);
-    pv_msg.velocity.linear.y = (pv_msg.position.y - y_prev)/(time -  time_prev);
-    pv_msg.measure = measure;
-    // ROS_INFO("camera frequency: %f", 1/(time -  time_prev));
-    // std::cout<<"camera frequency:"<<1/(time -  time_prev)<<std::endl;
-    blob_detector.setPosXPrev(Blob[0].pt.x);
-    blob_detector.setPosYPrev(Blob[0].pt.y);
-    blob_detector.setTimePrev(time);
     
-    /**
-     * The publish() function is how you send messages. The parameter
-     * is the message object. The type of this object must agree with the type
-     * given as a template parameter to the advertise<>() call, as was done
-     * in the constructor above.
-     */
-    ball_pub.publish(pv_msg);
 
     ros::spinOnce();
 

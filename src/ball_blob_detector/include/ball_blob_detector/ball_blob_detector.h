@@ -9,6 +9,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/aruco.hpp>
 #include <opencv2/calib3d.hpp>
+
+std::vector<cv::KeyPoint> Blob;
 class BallBlobDetector {
 public:
     BallBlobDetector(int cameraIndex);
@@ -24,11 +26,12 @@ public:
     cv::VideoCapture capture;
     std::vector<cv::KeyPoint> processFrame();
     Eigen::Vector2d plateCenterDetection();
-
+    bool calibration = true;
+    void setupPlateCoordinate();
 private:
     cv::Ptr<cv::SimpleBlobDetector> detector;
     void setupDetectorParams();
-    void setupPlateCoordinate();
+    
     double pos_x_prev = 0;
     double pos_y_prev = 0;
     double time_prev = 0;
@@ -61,7 +64,7 @@ private:
     Eigen::Matrix<double, 4, 2> MarkerPixelCenter;
     Eigen::Matrix<double, 2, 1> PlatePixelCenter;
     Eigen::Matrix<double, 2, 1> PlatePixelSize;
-    bool calibration = true;
+
     double k_pixel_length = 0;
     double k_pixel_width = 0;
 
