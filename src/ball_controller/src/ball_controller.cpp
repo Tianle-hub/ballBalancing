@@ -1,5 +1,5 @@
 #include <ball_controller/ball_controller.h>
-#include <ball_controller/kalman_filter.h>
+// #include "ball_controller/PosVel2D.h"
 
 namespace BallControl
 {
@@ -16,7 +16,7 @@ namespace BallControl
   bool BallController::initModel(const Eigen::Vector4d &x, const Eigen::Vector2d &input)
   {
     ROS_WARN_STREAM("BallController::init");
-    std::vector<double> vec;
+    std::vector<double> vec;  // Vector to store the retrieved values
 
     // check namespace
     std::string ns = "~ball_controller";
@@ -115,26 +115,30 @@ namespace BallControl
     t_prev_ = time;
 
     u_ = input;
+    ROS_INFO("ball controller frequency: %f", 1/timeStep);
+    // integrate(timeStep);
+
+    // geometry_msgs::Vector3Stamped ball_position;
+    // geometry_msgs::Vector3Stamped ball_velocity;
+
+    // ball_position.header.stamp = ros::Time::now();
+    // ball_velocity.header.stamp = ros::Time::now();
+
+    // ball_position.vector.x = x_(0);
+    // ball_position.vector.y = x_(2);
+
+    // ball_velocity.vector.x = x_(1);
+    // ball_velocity.vector.y = x_(3);
+
+    // position_pb_.publish(ball_position);
+    // velocity_pb_.publish(ball_velocity);
+
     
-    integrate(timeStep);
-
-    geometry_msgs::Vector3Stamped ball_position;
-    geometry_msgs::Vector3Stamped ball_velocity;
-
-    ball_position.header.stamp = ros::Time::now();
-    ball_velocity.header.stamp = ros::Time::now();
-
-    ball_position.vector.x = x_(0);
-    ball_position.vector.y = x_(2);
-
-    ball_velocity.vector.x = x_(1);
-    ball_velocity.vector.y = x_(3);
-
-    position_pb_.publish(ball_position);
-    velocity_pb_.publish(ball_velocity);
-
+    x_(0) = ball_pos_x;
+    x_(1) = ball_velo_x;
+    x_(2) = ball_pos_y;
+    x_(3) = ball_velo_y;
     pubBallTF();
-
     return x_;
   }
 
@@ -147,5 +151,17 @@ namespace BallControl
     q.setRPY(0,0,0);
     transform.setRotation(q);
     br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_6", "ball"));
+  }
+
+  void BallController::ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel)
+  {
+    ball_pos_x = ball_pos_vel.position.x;
+    ball_pos_y = ball_pos_vel.position.y;
+    ball_velo_x = ball_pos_vel.velocity.linear.x;
+    ball_velo_y = ball_pos_vel.velocity.linear.y;
+    measure = ball_pos_vel.measure;
+    ROS_INFO_STREAM("Measurement: " << measure);
+    ROS_INFO("I heard: Position - [%f, %f], Velocity - [%f, %f]", ball_pos_x, ball_pos_y, ball_velo_x, ball_velo_y);
+
   }
 }

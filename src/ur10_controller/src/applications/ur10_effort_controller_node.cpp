@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 
     // starts robotArm communication and the thread
     tum_ics_ur_robot_lli::Robot::RobotArmConstrained robot(configFilePath);;
-    if(!robot.init())
+    if(!robot.init())  // call UR10EffortControl::init()
     {
         return -1;
     }
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     ROS_INFO_STREAM("Start Robot");
     robot.start();
     ROS_INFO_STREAM("Start main thread");
-    ros::spin();
+    ros::spin();   // here runs all updates??
     ROS_INFO_STREAM("main: Stoping RobotArm()");
     robot.stop();
     ROS_INFO_STREAM("main: Stopped!!!");
