@@ -15,12 +15,17 @@ int main(int argc, char **argv)
     ros::Publisher true_position_pb = nh.advertise<geometry_msgs::Vector3Stamped>("true_ball_position", 1);
     ros::Publisher true_velocity_pb = nh.advertise<geometry_msgs::Vector3Stamped>("true_ball_velocity", 1);
 
+    ros::Publisher meas_position_pb = nh.advertise<geometry_msgs::Vector3Stamped>("meas_ball_position", 1);
+
     geometry_msgs::Vector3Stamped ball_position;
     geometry_msgs::Vector3Stamped ball_velocity;
     geometry_msgs::Vector3Stamped ball_acceleration;
 
     geometry_msgs::Vector3Stamped true_ball_position;
     geometry_msgs::Vector3Stamped true_ball_velocity;
+
+    geometry_msgs::Vector3Stamped meas_ball_position;
+    geometry_msgs::Vector3Stamped meas_ball_velocity;
 
     auto kalman_filter  = BallControl::KalmanFilter();
 
@@ -52,13 +57,20 @@ int main(int argc, char **argv)
         zx(1) += 0.1 * ((double) rand() / (RAND_MAX) - 0.5);
         ROS_INFO_STREAM("zx: \n" << zx);
 
+        meas_ball_position.header.stamp = ros::Time::now();
+
         kalman_filter.predict();
         if (t - t_prev >= 0.03)
         {
             kalman_filter.updatePos(zx);    
             ROS_INFO_STREAM("*****************************************************");
             t_prev = t;
+
+            meas_ball_position.vector.x = zx(0);
+            meas_ball_position.vector.y = zx(1);
         }
+        
+        meas_position_pb.publish(meas_ball_position);
 
         Eigen::Vector2d za(-0.5 * 9.81 * sin(t), - 0.5 * 2.0 * cos(t)); 
         za(0) += 0.01 * ((double) rand() / (RAND_MAX) - 0.5);
@@ -66,7 +78,7 @@ int main(int argc, char **argv)
 
         kalman_filter.updateAcc(za);
 
-        auto x = kalman_filter.getPosVel();
+        auto x = kalman_filter.getState();
 
         ROS_INFO_STREAM("t: \n" << t);
         ROS_INFO_STREAM("x: \n" << x.transpose());

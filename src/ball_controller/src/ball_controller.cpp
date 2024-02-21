@@ -1,4 +1,5 @@
 #include <ball_controller/ball_controller.h>
+#include <ball_controller/kalman_filter.h>
 
 namespace BallControl
 {

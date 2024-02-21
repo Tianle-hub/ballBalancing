@@ -38,7 +38,9 @@ namespace BallControl
 
     bool predict();
 
-    Eigen::Matrix<double,8,1> getPosVel();
+    Eigen::Vector4d getPosVel();
+
+    Eigen::Matrix<double,8,1> getState();
   };
 }
 

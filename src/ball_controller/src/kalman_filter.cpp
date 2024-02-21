@@ -185,9 +185,14 @@ namespace BallControl
     return true;
   }
 
-  Eigen::Matrix<double,8,1> KalmanFilter::getPosVel()
+  Eigen::Matrix<double,8,1> KalmanFilter::getState()
   {
     return x_;
+  }
+
+  Eigen::Vector4d KalmanFilter::getPosVel()
+  {
+    return Eigen::Vector4d(x_(0), x_(1), x_(2), x_(3));
   }
 
 }
