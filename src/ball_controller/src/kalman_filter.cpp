@@ -45,27 +45,37 @@ namespace BallControl
 
     // Hx
     ros::param::get(ns + "/Hx", vec);
-    if (vec.size() < 8)
+    if (vec.size() < 16)
     {
       ROS_ERROR_STREAM("Hx : wrong number of dimensions:" << vec.size());
       return false;
     }
-    for (size_t i = 0; i < 8; i++)
+    k = 0;
+    for (size_t i = 0; i < 2; i++)
     {
-      Hx_(i) = vec[i];
+      for (size_t j = 0; j < 8; j++)
+      {
+        Hx_(i, j) = vec[k];
+        k++;
+      }
     }
     ROS_WARN_STREAM("Hx: \n" << Hx_);
 
     // Ha
     ros::param::get(ns + "/Ha", vec);
-    if (vec.size() < 8)
+    if (vec.size() < 16)
     {
       ROS_ERROR_STREAM("Ha : wrong number of dimensions:" << vec.size());
       return false;
     }
-    for (size_t i = 0; i < 8; i++)
+    k = 0;
+    for (size_t i = 0; i < 2; i++)
     {
-      Ha_(i) = vec[i];
+      for (size_t j = 0; j < 8; j++)
+      {
+        Ha_(i, j) = vec[k];
+        k++;
+      }
     }
     ROS_WARN_STREAM("Ha: \n" << Ha_);
 
@@ -131,9 +141,9 @@ namespace BallControl
       return false;
     }
     k = 0;
-    for (size_t i = 0; i < 2; i++)
+    for (size_t i = 0; i < 8; i++)
     {
-      for (size_t j = 0; j < 4; j++)
+      for (size_t j = 0; j < 8; j++)
       {
       P_(i, j) = vec[k];
       k++;
@@ -141,10 +151,43 @@ namespace BallControl
     }
     ROS_WARN_STREAM("P: \n" << P_);
 
-    K_ = Eigen::Matrix<double,8,8>::Zero();
+    Kx_ = Eigen::Matrix<double,8,2>::Zero();
+    Ka_ = Eigen::Matrix<double,8,2>::Zero();
+
+    I_ = Eigen::Matrix<double,8,8>::Identity();
 
     x_ = x0;
 
+    return true;
+
+  }
+
+  bool KalmanFilter::predict()
+  {
+    x_ = F_ * x_;
+    P_ = F_ * P_ * F_.transpose() + Q_;
+    return true;
+  }
+
+  bool KalmanFilter::updatePos(const Eigen::Vector2d zx)
+  {
+    Kx_ = P_ * Hx_.transpose() * (Hx_ * P_ * Hx_.transpose() + Rx_.transpose()).inverse();
+    x_ = (I_ - Kx_ * Hx_) * x_ + Kx_ * zx;
+    P_ = (I_ - Kx_ * Hx_) * P_;
+    return true;
+  }
+
+  bool KalmanFilter::updateAcc(const Eigen::Vector2d za)
+  {
+    Ka_ = P_ * Ha_.transpose() * (Ha_ * P_ * Ha_.transpose() + Ra_.transpose()).inverse();
+    x_ = (I_ - Ka_ * Ha_) * x_ + Ka_ * za;
+    P_ = (I_ - Ka_ * Ha_) * P_;
+    return true;
+  }
+
+  Eigen::Matrix<double,8,1> KalmanFilter::getPosVel()
+  {
+    return x_;
   }
 
 }
