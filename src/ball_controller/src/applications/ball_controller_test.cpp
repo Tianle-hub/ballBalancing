@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     ros::Time::init();
 
     BallControl::BallController ball;
-    if(!ball.initModel(Eigen::Vector4d(0.2, 0.1, 0.1, 0.1), Eigen::Vector2d(0, 0)))
+    if(!ball.init(Eigen::Vector4d(0.2, 0.1, 0.1, 0.1), BallControl::BallType::MODEL))
     {
         return -1;
     }
@@ -27,9 +27,9 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {
-      Eigen::Vector4d x = ball.updateModel(t, u);
+      Eigen::Vector2d u = ball.update(t, u);
 
-      u = ball.update(x);
+      Eigen::Vector4d x = ball.getState();
 
       ball_position.header.stamp = ros::Time::now();
       ball_velocity.header.stamp = ros::Time::now();
@@ -43,11 +43,12 @@ int main(int argc, char **argv)
       position_pb.publish(ball_position);
       velocity_pb.publish(ball_velocity);
 
-      // ROS_INFO_STREAM("t : " << t);
-      // ROS_INFO_STREAM("x : " << x(0));
-      // ROS_INFO_STREAM("v : " << x(1));
-      // ROS_INFO_STREAM("y : " << x(2));
-      // ROS_INFO_STREAM("v : " << x(3));
+      ROS_INFO_STREAM("t : " << t);
+      ROS_INFO_STREAM("u : " << u);
+      ROS_INFO_STREAM("x : " << x(0));
+      ROS_INFO_STREAM("v : " << x(1));
+      ROS_INFO_STREAM("y : " << x(2));
+      ROS_INFO_STREAM("v : " << x(3));
       t += 0.002;
       ros::Duration(0.002).sleep();
       ros::spinOnce();

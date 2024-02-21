@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(ball_controller)
+project(ball_blob_detector)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 # Eigen
 ##############################################################################
 find_package(Eigen3 REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 add_definitions(${EIGEN_DEFINITIONS})
 
 ## System dependencies are found with CMake's conventions
@@ -54,7 +55,7 @@ add_definitions(${EIGEN_DEFINITIONS})
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-# Generate messages in the 'msg' folder
+## Generate messages in the 'msg' folder
 add_message_files(
   FILES
   PosVel2D.msg
@@ -112,8 +113,10 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES my_ball_controller
- CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs message_runtime
+ LIBRARIES my_ball_blob_detector # ball_blob_detector_test
+#  CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs
+ CATKIN_DEPENDS roscpp tf std_msgs geometry_msgs image_transport cv_bridge message_runtime
+ DEPENDS OpenCV
 #  DEPENDS system_lib
 )
 
@@ -128,14 +131,44 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${roscpp_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
 )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wno-cpp -O3" )
+set(CMAKE_BUILD_TYPE Release)
 
 ## Declare a C++ library
-add_library(my_ball_controller
-  src/ball_controller.cpp
-  src/kalman_filter.cpp
-  src/ball_model.cpp
+add_library(my_ball_blob_detector
+  src/ball_blob_detector.cpp
+  # src/camera_test.cpp
 )
+
+
+set(APP_TARGETS
+  ball_blob_detector_node
+)
+
+foreach(target ${APP_TARGETS})
+    add_executable(${target} src/applications/${target}.cpp)
+    target_link_libraries(${target}
+        my_ball_blob_detector
+        ${tum_ics_ur_robot_lli_LIBRARIES}
+        ${ball_controller_LIBRARIES}
+        ${Qt5Network_LIBRARIES}
+        ${Qt5Widgets_LIBRARIES}
+        ${RTTHREADS_LIBRARIES}
+        ${TMATH_LIBRARIES}
+        ${catkin_LIBRARIES}
+        ${roscpp_LIBRARIES}
+        ${OpenCV_LIBS}
+        )
+
+    add_dependencies(${target}
+                ${std_msgs_EXPORTED_TARGETS} 
+                ${catkin_EXPORTED_TARGETS}
+                ${geometry_msgs_EXPORTED_TARGETS}
+                ${visualization_msgs_EXPORTED_TARGETS} )
+endforeach()
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -145,8 +178,11 @@ add_library(my_ball_controller
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(ball_controller_test src/applications/ball_controller_test.cpp)
-add_executable(kalman_filter_test src/applications/kalman_filter_test.cpp)
+
+add_executable(ball_blob_detector_test src/ball_blob_detector.cpp)
+add_executable(camera_test src/camera_test.cpp)
+add_executable(aruco_generate src/ArUcoGenerator.cpp)
+add_executable(aruco_detect src/ArUcoInit.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -155,25 +191,43 @@ add_executable(kalman_filter_test src/applications/kalman_filter_test.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(ball_controller_test 
-                ${std_msgs_EXPORTED_TARGETS} 
-                ${catkin_EXPORTED_TARGETS}
-                ${geometry_msgs_EXPORTED_TARGETS})
-add_dependencies(kalman_filter_test 
-                ${std_msgs_EXPORTED_TARGETS} 
-                ${catkin_EXPORTED_TARGETS}
-                ${geometry_msgs_EXPORTED_TARGETS})
+
+
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ball_controller_test
-  my_ball_controller
+target_link_libraries( 
+  my_ball_blob_detector
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
 )
-target_link_libraries(kalman_filter_test
-  my_ball_controller
+
+target_link_libraries( 
+  ball_blob_detector_test
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
+
+target_link_libraries( 
+  camera_test
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
+
+target_link_libraries( 
+  aruco_generate
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
+
+target_link_libraries( 
+  aruco_detect
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 #############
@@ -195,6 +249,9 @@ target_link_libraries(kalman_filter_test
 # install(TARGETS ${PROJECT_NAME}_node
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
