@@ -147,6 +147,8 @@ add_library(my_ball_controller
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(ball_controller_test src/applications/ball_controller_test.cpp)
 add_executable(kalman_filter_test src/applications/kalman_filter_test.cpp)
+add_executable(kalman_filter_test_with_camera src/applications/kalman_filter_test_with_camera.cpp)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -163,6 +165,10 @@ add_dependencies(kalman_filter_test
                 ${std_msgs_EXPORTED_TARGETS} 
                 ${catkin_EXPORTED_TARGETS}
                 ${geometry_msgs_EXPORTED_TARGETS})
+add_dependencies(kalman_filter_test_with_camera 
+                ${std_msgs_EXPORTED_TARGETS} 
+                ${catkin_EXPORTED_TARGETS}
+                ${geometry_msgs_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(ball_controller_test
@@ -175,7 +181,11 @@ target_link_libraries(kalman_filter_test
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
 )
-
+target_link_libraries(kalman_filter_test_with_camera
+  my_ball_controller
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+)
 #############
 ## Install ##
 #############
