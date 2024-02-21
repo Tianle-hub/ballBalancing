@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   // Use the appropriate camera index 
   // 0 for internal, 4 for usb camera in Tianle Laptop left
   // 0 for PC in ics, top usb
-  int cameraIndex = 0;  
+  int cameraIndex = 4;  
   BallBlobDetector blob_detector(cameraIndex); 
   
   /**
@@ -61,15 +61,17 @@ int main(int argc, char **argv)
   int count = 0;
   while (ros::ok())
   {
+    // Calibration 
     blob_detector.setupPlateCoordinate();
+    if (cv::waitKey(30) >= 0 ) break;
 
     if(!blob_detector.calibration)
     {
       Blob= blob_detector.processFrame();
-      if (Blob.empty() || cv::waitKey(30) >= 0){
-        blob_detector.capture.release();
-        cv::destroyAllWindows();
-      }
+      // if (Blob.empty() ){
+      //   blob_detector.capture.release();
+      //   cv::destroyAllWindows();
+      // }
 
       double time = ros::Time::now().toSec();
       

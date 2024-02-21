@@ -133,10 +133,10 @@ void BallBlobDetector::setupPlateCoordinate()
                 MarkerPixelCenter(markerIds[i], 0) = centerX;
                 MarkerPixelCenter(markerIds[i], 1) = centerY;
 
-                std::cout << "Marker ID: " << markerIds[i] << " Center: (" << centerX << ", " << centerY << ")" << std::endl;
+                // std::cout << "Marker ID: " << markerIds[i] << " Center: (" << centerX << ", " << centerY << ")" << std::endl;
             }
-            std::cout << "center distance estimate:" << CenterLength << ", " << CenterWidth << std::endl;
-            std::cout << "corner center coordinate in pixel:\n" << MarkerPixelCenter << std::endl;
+            // std::cout << "center distance estimate:" << CenterLength << ", " << CenterWidth << std::endl;
+            // std::cout << "corner center coordinate in pixel:\n" << MarkerPixelCenter << std::endl;
             // Marker sequence
             // 0 ------ 1
             // |        |
@@ -145,30 +145,10 @@ void BallBlobDetector::setupPlateCoordinate()
 
             PlatePixelCenter<<(MarkerPixelCenter(0,0)+MarkerPixelCenter(1,0))/2, (MarkerPixelCenter(2,1)+MarkerPixelCenter(0,1))/2;
             PlatePixelSize<< MarkerPixelCenter(1,0)-MarkerPixelCenter(0,0), MarkerPixelCenter(2,1)-MarkerPixelCenter(0,1);
-            std::cout << "plate center coordinate in pixel:\n" << PlatePixelCenter << std::endl;
+            // std::cout << "plate center coordinate in pixel:\n" << PlatePixelCenter << std::endl;
             k_pixel_length = CenterLength/ PlatePixelSize(0,0);
             k_pixel_width = CenterWidth/ PlatePixelSize(1,0);
-            std::cout << "k_pixel: " << k_pixel_length << ", " << k_pixel_width << std::endl;
-
-            // // upper_right - upper left to get horzional lenth
-            // double platePixelLength = markerCorners[markerIds[1]][1].x - markerCorners[markerIds[0]][0].x;
-            // // upper_left - down left to get vertical width
-            // double platePixelWidth = markerCorners[markerIds[0]][0].y - markerCorners[markerIds[2]][3].y;
-
-            // cv::Point2f PlateUpperLeft = markerCorners[markerIds[0]][0];
-            // cv::Point2f PlateUpperRight = markerCorners[markerIds[1]][1];
-            // cv::Point2f PlateLowerLeft = markerCorners[markerIds[2]][3];
-            // cv::Point2f PlateLowerRight = markerCorners[markerIds[3]][2];
-
-            // double k_pixel_length = PlateLengthMeter / platePixelLength;
-            // double k_pixel_width = PlateWidthMeter / platePixelWidth;
             // std::cout << "k_pixel: " << k_pixel_length << ", " << k_pixel_width << std::endl;
-
-            // Eigen::Vector2d PlateCenterPixel;
-            // PlateCenterPixel<<(PlateUpperLeft.x + PlateLowerRight.x)/2, (PlateUpperLeft.y + PlateLowerRight.y)/2;
-
-            // Eigen::Vector2d BallPosPixel;
-            // BallPosPixel<<200,200; //for test
 
             // Draw axis for each marker
             for (int i = 0; i < markerIds.size(); i++)
@@ -180,22 +160,27 @@ void BallBlobDetector::setupPlateCoordinate()
                 // std::cout << "Corner0" << ": (" << markerCorners[i][0].x << ", " << markerCorners[i][0].y << ")" << std::endl;
             }
 
+            // judge whether plate length is reasonable
+            // !! Change bounds when plate is changed
+            // inside four marker logic
             if (CenterLength >= plate_length_lower_bound 
             && CenterLength <= plate_length_upper_bound 
             && CenterWidth >= plate_width_lower_bound 
             && CenterWidth <= plate_width_upper_bound 
             && calibration)
             {
-                // ROS_INFO("Calibration done");
-                calibration = false;   // should be false, true is for testing
+                ROS_INFO("Calibration done");
+                calibration = false;   // once turned false, never true, blobDetect activate
                 PlatePixelCenter_fixed<<PlatePixelCenter(0,0), PlatePixelCenter(1,0);
                 k_pixel_length_fixed = k_pixel_length;
                 k_pixel_width_fixed = k_pixel_width;
             }
+
             if (abs(PlatePixelCenter_fixed(0,0) - PlatePixelCenter(0,0)) >= 20 ||
                 abs(PlatePixelCenter_fixed(1,0) - PlatePixelCenter(1,0)) >= 20 ){
                 
                 ROS_INFO("Calibration updated ");
+                // update pixel center 
                 PlatePixelCenter_fixed<<PlatePixelCenter(0,0), PlatePixelCenter(1,0);
                 k_pixel_length_fixed = k_pixel_length;
                 k_pixel_width_fixed = k_pixel_width;
@@ -204,10 +189,7 @@ void BallBlobDetector::setupPlateCoordinate()
         }// marker 4
         
     } // !markerId.empty
-    cv::imshow("Detected ArUco markers", imageCopy);
-    
-    // if (cv::waitKey(30) >= 0)
-    //     break;
+    if (calibration) cv::imshow("Detected ArUco markers", imageCopy);
 }
 
 std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
@@ -215,8 +197,11 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
     // cv::Mat frame;
     // Process frame...
     capture >> frame;
-    if (frame.empty())
+    if (frame.empty()){
+        measure = false;
         return std::vector<cv::KeyPoint>();
+    }
+
 
     int width = frame.cols;  // 640
     int height = frame.rows; // 480
@@ -280,8 +265,6 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
 
         // Show the result
         cv::imshow("Red Ball Detection", im_with_keypoints);
-        // largestBlob[0].pt.x = (largestBlob[0].pt.x - width / 2) / width;
-        // largestBlob[0].pt.y = (largestBlob[0].pt.y - height / 2) / height;
         // Output the coordinates of the largest blob
 
         // Ball 
@@ -292,10 +275,10 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
             // v
             // y (0, size_y)
 
-        std::cout << "Blob coordinates(pixel): " << largestBlob[0].pt.x << ", " << largestBlob[0].pt.y << std::endl;
+        // std::cout << "Blob coordinates(pixel): " << largestBlob[0].pt.x << ", " << largestBlob[0].pt.y << std::endl;
         double ball_pos_x = double(largestBlob[0].pt.x - PlatePixelCenter_fixed(0,0))*k_pixel_length_fixed;
         double ball_pos_y = double(largestBlob[0].pt.y - PlatePixelCenter_fixed(1,0))*k_pixel_width_fixed;
-        std::cout << "Blob coordinates(meter): " << ball_pos_x<< ", " << ball_pos_y << std::endl;
+        // std::cout << "Blob coordinates(meter): " << ball_pos_x<< ", " << ball_pos_y << std::endl;
         // std::cout << "largestBlobRadius:" << largestBlobRadius << std::endl;
         // std::cout << "plate center coordinate in pixel:\n" << PlatePixelCenter << std::endl;
         // std::cout << "plate size estimate:" << CenterLength << ", " << CenterWidth << std::endl;
@@ -336,7 +319,7 @@ int main(int argc, char **argv)
     // Use the appropriate camera index
     // 0 for internal, 4 for usb camera in Tianle Laptop left
     // 0 for PC in ics, top usb
-    int cameraIndex = 0;
+    int cameraIndex = 4;
 
     BallBlobDetector blob_detector(cameraIndex);
     blob_detector.run();
