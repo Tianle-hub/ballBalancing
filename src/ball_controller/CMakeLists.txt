@@ -134,6 +134,7 @@ include_directories(
 add_library(my_ball_controller
   src/ball_controller.cpp
   src/kalman_filter.cpp
+  src/ball_model.cpp
 )
 
 ## Add cmake target dependencies of the library
