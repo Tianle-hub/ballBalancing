@@ -24,7 +24,7 @@ namespace BallControl
         break;
       
       case CAMERA:
-        KalmanFilter_.init(Eigen::Matrix<double,8,1>::Zero());
+        KalmanFilter_.gerParam();
         break;
     }    
     // state
@@ -101,11 +101,28 @@ namespace BallControl
       ball_pos_x = ball_pos_vel.position.x;
       ball_pos_y = ball_pos_vel.position.y;
 
-      Eigen::Vector2d pos(ball_pos_x, ball_pos_y);
-      KalmanFilter_.updatePos(pos);
-      
-      ROS_INFO_STREAM("Measurement: " << measure);
-      ROS_INFO("I heard: Position - [%f, %f]", ball_pos_x, ball_pos_y);
+      if (!KalmanFilter_.isInitialized())
+      {
+        Eigen::Matrix<double,8,1> x0 = Eigen::Matrix<double,8,1>::Zero();
+        x0(0) = ball_pos_x;
+        x0(4) = ball_pos_y;
+
+        if (KalmanFilter_.init(x0))
+        {
+          ROS_INFO_STREAM("Successfully initialize kalman filter.");
+        } else
+        {
+          ROS_WARN_STREAM("Falied to initialize kalman filter!");
+        }
+
+      } else
+      {
+        Eigen::Vector2d pos(ball_pos_x, ball_pos_y);
+        KalmanFilter_.updatePos(pos);
+        
+        ROS_INFO_STREAM("Measurement: " << measure);
+        ROS_INFO("I heard: Position - [%f, %f]", ball_pos_x, ball_pos_y);
+      }
     }
 
   }

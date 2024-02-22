@@ -9,6 +9,8 @@ namespace BallControl
   class KalmanFilter
   {
     private:
+    bool initialized_;
+
     Eigen::Matrix<double,8,1> x_;
     Eigen::Matrix<double,8,8> F_;
 
@@ -30,13 +32,17 @@ namespace BallControl
     KalmanFilter();
     ~KalmanFilter();
 
+    bool gerParam();
+
     bool init(const Eigen::Matrix<double,8,1> &x0);
 
-    bool updateAcc(const Eigen::Vector2d za);
+    bool updateAcc(const Eigen::Vector2d &za);
 
-    bool updatePos(const Eigen::Vector2d zx);
+    bool updatePos(const Eigen::Vector2d &zx);
 
     bool predict();
+
+    bool isInitialized();
 
     Eigen::Vector4d getPosVel();
 
