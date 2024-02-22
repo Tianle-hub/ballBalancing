@@ -66,8 +66,8 @@ int main(int argc, char **argv)
     time = ros::Time::now().toSec();
     if (blob_detector.calibration) blob_detector.setupPlateCoordinate();
     if (cv::waitKey(3) >= 0 ) break;  // sleep 0.003 s but not know why
-    auto duration = ros::Time::now().toSec() - time;
-    ROS_WARN_STREAM("duration: " << duration);
+    // auto duration = ros::Time::now().toSec() - time;
+    // ROS_WARN_STREAM("duration: " << duration);
 
     if(!blob_detector.calibration)
     {

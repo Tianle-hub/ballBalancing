@@ -58,6 +58,7 @@ namespace BallControl
     }
 
     pubBallTF();
+    pubState();
 
     u_d_ = -K_ * x_;
     return u_d_;
@@ -73,6 +74,24 @@ namespace BallControl
     q.setRPY(0,0,0);
     transform.setRotation(q);
     br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_6", "ball"));
+  }
+
+  void BallController::pubState()
+  {
+      geometry_msgs::Vector3Stamped ball_position;
+      geometry_msgs::Vector3Stamped ball_velocity;
+
+      ball_position.header.stamp = ros::Time::now();
+      ball_velocity.header.stamp = ros::Time::now();
+
+      ball_position.vector.x = x_(0);
+      ball_position.vector.y = x_(2);
+
+      ball_velocity.vector.x = x_(1);
+      ball_velocity.vector.y = x_(3);
+
+      position_pb_.publish(ball_position);
+      velocity_pb_.publish(ball_velocity);
   }
 
   void BallController::ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel)

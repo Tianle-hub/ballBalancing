@@ -23,7 +23,7 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      ball_controller.init(Vector4d(0.2, -0.1, 0.2, -0.1), BallControl::BallType::MODEL);  // init_state, init_velocity
+      ball_controller.init(Vector4d(0.1, -0.05, 0.1, -0.05), BallControl::BallType::MODEL);  // init_state, init_velocity
       // ball_controller.init(Vector4d(0, 0, 0, 0), BallControl::BallType::MODEL);  // init_state, init_velocity / init angle 
     
     }
@@ -178,7 +178,7 @@ namespace tum_ics_ur_robot_lli
       // Cartesian space
       if (time.tD() > 10.)
       {
-        Vector3d x_goal_t(1.0, 0.164, 0.750);
+        Vector3d x_goal_t(-0.15359, 0.931906, 0.41);
         // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;  //move along z-axis?
 
         Vector2d u_ball_d = updateBallController(time.tD() - 10., state);
@@ -186,10 +186,10 @@ namespace tum_ics_ur_robot_lli
         // ball
 
         // end effector rotation move with ball
-        Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
+        // Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
         
         // end effector rotation stay still
-        // Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
+        Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
 
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
 
@@ -307,6 +307,8 @@ namespace tum_ics_ur_robot_lli
       // error in cartesian space
       Vector6d delta_x;
       delta_x << delta_x_t, delta_x_r;
+
+      ROS_INFO_STREAM("error: \n" << delta_x.transpose());
 
       Vector6d delta_xp = EE_vel - EE_d[1];
 
