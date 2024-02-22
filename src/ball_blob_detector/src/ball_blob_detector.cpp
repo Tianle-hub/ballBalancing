@@ -276,9 +276,9 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
             // y (0, size_y)
 
         // std::cout << "Blob coordinates(pixel): " << largestBlob[0].pt.x << ", " << largestBlob[0].pt.y << std::endl;
-        double ball_pos_x = double(largestBlob[0].pt.x - PlatePixelCenter_fixed(0,0))*k_pixel_length_fixed;
-        double ball_pos_y = double(largestBlob[0].pt.y - PlatePixelCenter_fixed(1,0))*k_pixel_width_fixed;
-        // std::cout << "Blob coordinates(meter): " << ball_pos_x<< ", " << ball_pos_y << std::endl;
+        largestBlob[0].pt.x = double(largestBlob[0].pt.x - PlatePixelCenter_fixed(0,0))*k_pixel_length_fixed;
+        largestBlob[0].pt.y = double(largestBlob[0].pt.y - PlatePixelCenter_fixed(1,0))*k_pixel_width_fixed;
+        // std::cout << "Blob coordinates(meter): " << largestBlob[0].pt.x<< ", " << largestBlob[0].pt.y << std::endl;
         // std::cout << "largestBlobRadius:" << largestBlobRadius << std::endl;
         // std::cout << "plate center coordinate in pixel:\n" << PlatePixelCenter << std::endl;
         // std::cout << "plate size estimate:" << CenterLength << ", " << CenterWidth << std::endl;

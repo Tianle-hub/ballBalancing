@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   // Use the appropriate camera index 
   // 0 for internal, 4 for usb camera in Tianle Laptop left
   // 0 for PC in ics, top usb
-  int cameraIndex = 4;  
+  int cameraIndex = 0;  
   BallBlobDetector blob_detector(cameraIndex); 
   
   /**
@@ -49,31 +49,36 @@ int main(int argc, char **argv)
    * than we can send them, the number here specifies how many messages to
    * buffer up before throwing some away.
    */
-  ros::Publisher ball_pub = nh.advertise<ball_blob_detector::PosVel2D>("ball_pos_vel", 1000);
+  ros::Publisher ball_pub = nh.advertise<ball_blob_detector::PosVel2D>("ball_pos_vel", 10);
   ball_blob_detector::PosVel2D pv_msg;
 
-  ros::Rate loop_rate(10);
+  // ros::Rate loop_rate(10);
 
   /**
    * A count of how many messages we have sent. This is used to create
    * a unique string for each message.
    */
   int count = 0;
+  double time = ros::Time::now().toSec();
   while (ros::ok())
   {
     // Calibration 
-    blob_detector.setupPlateCoordinate();
-    if (cv::waitKey(30) >= 0 ) break;
+    time = ros::Time::now().toSec();
+    if (blob_detector.calibration) blob_detector.setupPlateCoordinate();
+    if (cv::waitKey(3) >= 0 ) break;  // sleep 0.003 s but not know why
+    auto duration = ros::Time::now().toSec() - time;
+    ROS_WARN_STREAM("duration: " << duration);
 
     if(!blob_detector.calibration)
     {
-      Blob= blob_detector.processFrame();
+      
+      Blob = blob_detector.processFrame();
       // if (Blob.empty() ){
       //   blob_detector.capture.release();
       //   cv::destroyAllWindows();
       // }
 
-      double time = ros::Time::now().toSec();
+    
       
       pv_msg.position.x = Blob[0].pt.x;
       pv_msg.position.y = Blob[0].pt.y;
@@ -91,6 +96,7 @@ int main(int argc, char **argv)
       blob_detector.setPosYPrev(Blob[0].pt.y);
       blob_detector.setTimePrev(time);
       
+      
       /**
        * The publish() function is how you send messages. The parameter
        * is the message object. The type of this object must agree with the type
@@ -98,16 +104,18 @@ int main(int argc, char **argv)
        * in the constructor above.
        */
       ball_pub.publish(pv_msg);
+      
     }
 
 
     // Eigen::Vector2d plate_center = blob_detector.plateCenterDetection();
 
     
-
+    ros::Duration(1./300).sleep();
     ros::spinOnce();
 
-    loop_rate.sleep();
+
+    
     ++count;
   }
 
