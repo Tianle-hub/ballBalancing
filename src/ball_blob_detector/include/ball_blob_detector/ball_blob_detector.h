@@ -65,9 +65,9 @@ private:
     double PlateWidthMeter = 0.5;
 
     double plate_length_upper_bound = 0.5;
-    double plate_length_lower_bound = 0.45;
+    double plate_length_lower_bound = 0.42;
     double plate_width_upper_bound = 0.5;
-    double plate_width_lower_bound = 0.45;
+    double plate_width_lower_bound = 0.42;
 
     double CenterLength = 0;
     double CenterWidth = 0;

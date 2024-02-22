@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   // Use the appropriate camera index 
   // 0 for internal, 4 for usb camera in Tianle Laptop left
   // 0 for PC in ics, top usb
-  int cameraIndex = 0;  
+  int cameraIndex = 4;  
   BallBlobDetector blob_detector(cameraIndex); 
   
   /**
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     
       
       pv_msg.position.x = Blob[0].pt.x;
-      pv_msg.position.y = Blob[0].pt.y;
+      pv_msg.position.y = -Blob[0].pt.y;  // minus for correspond to robot frame
 
       double x_prev = blob_detector.getPosXPrev();
       double y_prev = blob_detector.getPosYPrev();
