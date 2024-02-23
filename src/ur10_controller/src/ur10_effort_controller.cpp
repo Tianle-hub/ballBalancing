@@ -186,6 +186,8 @@ namespace tum_ics_ur_robot_lli
         // ball
 
         // end effector rotation move with ball
+        // rotation matrix transformed by euler angles on z, y, x axis
+        // via absolute angle command
         Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
         
         // end effector rotation stay still
