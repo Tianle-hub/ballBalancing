@@ -65,6 +65,8 @@ namespace BallControl
 
       bool initK();
 
+      void pubState();
+
   };
 }
 

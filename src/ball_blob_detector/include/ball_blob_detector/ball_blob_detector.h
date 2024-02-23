@@ -51,13 +51,23 @@ private:
     cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
 
-    double PlateLengthMeter = 0.31;
-    double PlateWidthMeter = 0.22;
+    // my brown plate
+    // double PlateLengthMeter = 0.31;
+    // double PlateWidthMeter = 0.22;
 
-    double plate_length_upper_bound = 0.3;
-    double plate_length_lower_bound = 0.25;
-    double plate_width_upper_bound = 0.2;
-    double plate_width_lower_bound = 0.16;
+    // double plate_length_upper_bound = 0.3;
+    // double plate_length_lower_bound = 0.25;
+    // double plate_width_upper_bound = 0.2;
+    // double plate_width_lower_bound = 0.16;
+
+    // Big grey plate
+    double PlateLengthMeter = 0.5;
+    double PlateWidthMeter = 0.5;
+
+    double plate_length_upper_bound = 0.5;
+    double plate_length_lower_bound = 0.42;
+    double plate_width_upper_bound = 0.5;
+    double plate_width_lower_bound = 0.42;
 
     double CenterLength = 0;
     double CenterWidth = 0;

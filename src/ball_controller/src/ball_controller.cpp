@@ -24,7 +24,7 @@ namespace BallControl
         break;
       
       case CAMERA:
-        KalmanFilter_.init(Eigen::Matrix<double,8,1>::Zero());
+        KalmanFilter_.gerParam();
         break;
     }    
     // state
@@ -58,6 +58,7 @@ namespace BallControl
     }
 
     pubBallTF();
+    pubState();
 
     u_d_ = -K_ * x_;
     return u_d_;
@@ -75,6 +76,24 @@ namespace BallControl
     br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_6", "ball"));
   }
 
+  void BallController::pubState()
+  {
+      geometry_msgs::Vector3Stamped ball_position;
+      geometry_msgs::Vector3Stamped ball_velocity;
+
+      ball_position.header.stamp = ros::Time::now();
+      ball_velocity.header.stamp = ros::Time::now();
+
+      ball_position.vector.x = x_(0);
+      ball_position.vector.y = x_(2);
+
+      ball_velocity.vector.x = x_(1);
+      ball_velocity.vector.y = x_(3);
+
+      position_pb_.publish(ball_position);
+      velocity_pb_.publish(ball_velocity);
+  }
+
   void BallController::ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel)
   {
     if (ball_pos_vel.measure == true)
@@ -82,11 +101,28 @@ namespace BallControl
       ball_pos_x = ball_pos_vel.position.x;
       ball_pos_y = ball_pos_vel.position.y;
 
-      Eigen::Vector2d pos(ball_pos_x, ball_pos_y);
-      KalmanFilter_.updatePos(pos);
-      
-      ROS_INFO_STREAM("Measurement: " << measure);
-      ROS_INFO("I heard: Position - [%f, %f]", ball_pos_x, ball_pos_y);
+      if (!KalmanFilter_.isInitialized())
+      {
+        Eigen::Matrix<double,8,1> x0 = Eigen::Matrix<double,8,1>::Zero();
+        x0(0) = ball_pos_x;
+        x0(4) = ball_pos_y;
+
+        if (KalmanFilter_.init(x0))
+        {
+          ROS_INFO_STREAM("Successfully initialize kalman filter.");
+        } else
+        {
+          ROS_WARN_STREAM("Falied to initialize kalman filter!");
+        }
+
+      } else
+      {
+        Eigen::Vector2d pos(ball_pos_x, ball_pos_y);
+        KalmanFilter_.updatePos(pos);
+        
+        ROS_INFO_STREAM("Measurement: " << measure);
+        ROS_INFO("I heard: Position - [%f, %f]", ball_pos_x, ball_pos_y);
+      }
     }
 
   }

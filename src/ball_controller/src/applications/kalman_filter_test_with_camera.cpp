@@ -1,6 +1,25 @@
 #include <ball_controller/kalman_filter.h>
 #include <random>
 #include <geometry_msgs/Vector3Stamped.h>
+#include "ball_controller/PosVel2D.h"
+
+auto kalman_filter  = BallControl::KalmanFilter();
+
+void ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel)
+{
+if (ball_pos_vel.measure == true)
+{
+    auto ball_pos_x = ball_pos_vel.position.x;
+    auto ball_pos_y = ball_pos_vel.position.y;
+
+    Eigen::Vector2d pos(ball_pos_x, ball_pos_y);
+    kalman_filter.updatePos(pos);
+    
+    ROS_INFO_STREAM("Measurement: " << ball_pos_vel.measure);
+    ROS_INFO("I heard: Position - [%f, %f]", ball_pos_x, ball_pos_y);
+}
+
+}
 
 int main(int argc, char **argv)
 {
@@ -12,11 +31,13 @@ int main(int argc, char **argv)
     ros::Publisher velocity_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_velocity_kal", 1);
     ros::Publisher acceleration_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_kal", 1);
 
+    auto camera_sub_ = nh.subscribe("ball_pos_vel", 1000, ball_pos_vel_Callback);
+
+
     geometry_msgs::Vector3Stamped ball_position;
     geometry_msgs::Vector3Stamped ball_velocity;
     geometry_msgs::Vector3Stamped ball_acceleration;
 
-    auto kalman_filter  = BallControl::KalmanFilter();
 
     kalman_filter.init(Eigen::Matrix<double,8,1>::Zero());
 
@@ -30,8 +51,8 @@ int main(int argc, char **argv)
         kalman_filter.predict();
         auto x = kalman_filter.getState();
 
-        ROS_INFO_STREAM("t: \n" << t);
-        ROS_INFO_STREAM("x: \n" << x.transpose());
+        // ROS_INFO_STREAM("t: \n" << t);
+        // ROS_INFO_STREAM("x: \n" << x.transpose());
 
         ball_position.header.stamp = ros::Time::now();
         ball_velocity.header.stamp = ros::Time::now();

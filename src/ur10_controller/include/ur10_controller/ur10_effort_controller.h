@@ -20,6 +20,7 @@ namespace tum_ics_ur_robot_lli
     {
     private:
       bool is_first_iter_;
+      bool switch_to_carte_;
 
       Vector6d q_start_;
       JointState q_init_;
@@ -40,7 +41,7 @@ namespace tum_ics_ur_robot_lli
       Matrix6d Kd_c_;
       Matrix6d Ki_c_;
 
-      Vector6d q_goal_;
+      Eigen::Matrix<double,6,3> q_goal_;
       double spline_period_;
 
       Vector6d delta_q_;
