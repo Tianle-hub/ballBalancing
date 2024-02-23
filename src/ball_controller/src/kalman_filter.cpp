@@ -161,7 +161,6 @@ namespace BallControl
     initialized_ = false;
 
     return true;
-
   }
 
   bool KalmanFilter::init(const Eigen::Matrix<double,8,1> &x0)
@@ -183,7 +182,6 @@ namespace BallControl
       P_ = F_ * P_ * F_.transpose() + Q_;
       return true;
     }
-
   }
 
   bool KalmanFilter::updatePos(const Eigen::Vector2d &zx)
@@ -223,7 +221,7 @@ namespace BallControl
 
   Eigen::Vector4d KalmanFilter::getPosVel()
   {
-    return Eigen::Vector4d(x_(0), x_(1), x_(2), x_(3));
+    return Eigen::Vector4d(x_(0), x_(1), x_(4), x_(5));
   }
 
   bool KalmanFilter::isInitialized()

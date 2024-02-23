@@ -24,8 +24,8 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      ball_controller.init(Vector4d(0.2, -0.1, 0.2, -0.1), BallControl::BallType::MODEL);  // init_state, init_velocity
-      // ball_controller.init(Vector4d(0, 0, 0, 0), BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
+      ball_controller.init(Vector4d(0.2, -0.1, 0.2, -0.1), BallControl::BallType::CAMERA);  // init_state, init_velocity
+      // ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
     
     }
 
@@ -108,7 +108,21 @@ namespace tum_ics_ur_robot_lli
           k++;
         }
       }
-      
+
+      // Working position
+      ros::param::get(ns + "/joint/working_position", vec);
+      if (vec.size() < 3)
+      {
+        ROS_ERROR_STREAM("working_position: wrong number of dimensions:" << vec.size());
+        m_error = true;
+        return false;
+      }
+      for (int i = 0; i < 3; i++)
+      {
+        working_position_(i) = vec[i];
+      }
+      ROS_WARN_STREAM("working_position: \n" << working_position_.transpose());
+
       // total time
       ros::param::get(ns + "/joint/time", spline_period_);
       if (!(spline_period_ > 0))
@@ -180,12 +194,12 @@ namespace tum_ics_ur_robot_lli
       vQd = getJointPVT5(q_start_, q_goal_.block<6,1>(0,0), time.tD(), spline_period_);
 
       tau = jointPDController(time, state, vQd);
-      } else if (time.tD() <= 2*spline_period_)
+      } else if (time.tD() <= 3*spline_period_)
       {
       vQd = getJointPVT5(q_goal_.block<6,1>(0,0), q_goal_.block<6,1>(0,1), time.tD() - spline_period_, spline_period_);
 
       tau = jointPDController(time, state, vQd);
-      } else if (time.tD() > 3*spline_period_ || time.tD() <= 4*spline_period_)
+      } else if (time.tD() > 3*spline_period_ && time.tD() <= 20.)
       {
       vQd = getJointPVT5(q_goal_.block<6,1>(0,1), q_goal_.block<6,1>(0,2), time.tD() - 3*spline_period_, spline_period_);
 
@@ -200,7 +214,7 @@ namespace tum_ics_ur_robot_lli
           ROS_INFO_STREAM("Switched to cartesian space controller.");
           switch_to_carte_ = true;
         }
-        Vector3d x_goal_t(1.218, 0.164, 0.526);
+        Vector3d x_goal_t = working_position_;
         // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;  //move along z-axis?
 
         Vector2d u_ball_d = updateBallController(time.tD() - 20., state);
@@ -209,7 +223,6 @@ namespace tum_ics_ur_robot_lli
 
         // end effector rotation move with ball
         Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
-        ROS_INFO_STREAM("u_ball_d: "  << u_ball_d.transpose());
 
         // end effector rotation stay still
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();

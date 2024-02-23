@@ -19,9 +19,11 @@ ur10_effort_ctrl:
     #  goal: [0, 0, 0, 0, 0, 0]
     time: 4.0
 
+    working_position: [1.218, 0.164, 0.526]
+    
   cartesian:
     #proportional
-    gains_p: [1, 1, 1, 3, 3, 1]
+    gains_p: [1, 1, 1, 5, 3, 1]
     
     #derivative
     gains_d: [100, 75, 75, 73, 15, 5]

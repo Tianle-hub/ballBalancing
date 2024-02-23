@@ -16,11 +16,18 @@ namespace BallControl
     MODEL,
     CAMERA
   };
+
+  enum ControllerState
+  {
+    RUNNING,
+    WAITING
+  };
   
   class BallController
   {
     private:
       BallType ballType_;
+      ControllerState controllerState_;
 
       Eigen::Vector4d x_; // px vx py vy
       Eigen::Vector2d u_d_;
@@ -53,6 +60,8 @@ namespace BallControl
       ~BallController();
 
       bool init(const Eigen::Vector4d &x, const BallControl::BallType ballType);
+
+      bool init(const BallControl::BallType ballType);
       
       Eigen::Vector2d update(const double &time, const Eigen::Vector2d &u);
 
