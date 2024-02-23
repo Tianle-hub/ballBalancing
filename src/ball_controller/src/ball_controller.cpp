@@ -21,10 +21,13 @@ namespace BallControl
     {
       case MODEL:
         ballModel_.initModel(x);
+        controllerState_ = ControllerState::RUNNING;
         break;
       
       case CAMERA:
         KalmanFilter_.gerParam();
+        controllerState_ = ControllerState::WAITING;
+        ROS_WARN_STREAM("waiting for ball...");
         break;
     }    
     // state
@@ -41,27 +44,72 @@ namespace BallControl
     return true;
   }
 
-
-  Eigen::Vector2d BallController::update(const double &time, const Eigen::Vector2d &u)
+  bool BallController::init(const BallType ballType)
   {
+    ballType_ = ballType;
+
+    Eigen::Vector4d x = Eigen::Vector4d::Zero();
+
     switch(ballType_)
     {
       case MODEL:
-        x_ = ballModel_.updateModel(time, u);
+        ballModel_.initModel(x);
+        controllerState_ = ControllerState::RUNNING;
         break;
       
       case CAMERA:
-        KalmanFilter_.predict();
-        KalmanFilter_.updateAcc(u);
-        x_ = KalmanFilter_.getPosVel();
+        KalmanFilter_.gerParam();
+        controllerState_ = ControllerState::WAITING;
+        break;
+    }    
+    // state
+    x_ = x;
+    // input
+    u_d_ = Eigen::Vector2d::Zero();
+
+    initK();
+
+    position_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
+    velocity_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
+    camera_sub_ = nh_.subscribe("ball_pos_vel", 1000, &BallController::ball_pos_vel_Callback, this);
+
+    return true;
+  }
+
+  Eigen::Vector2d BallController::update(const double &time, const Eigen::Vector2d &u)
+  {
+    switch(controllerState_)
+    {
+      case WAITING:
+        return Eigen::Vector2d::Zero();
+        break;
+
+      case RUNNING:
+        switch(ballType_)
+        {
+          case MODEL:
+            x_ = ballModel_.updateModel(time, u);
+            break;
+          
+          case CAMERA:
+            KalmanFilter_.predict();
+            KalmanFilter_.updateAcc(u);
+            x_ = KalmanFilter_.getPosVel();
+            break;
+        }
+
+        pubBallTF();
+        pubState();
+
+        u_d_ = -K_ * x_;
+        return u_d_;
+
+        break;
+
+      default:
+        return Eigen::Vector2d::Zero();
         break;
     }
-
-    pubBallTF();
-    pubState();
-
-    u_d_ = -K_ * x_;
-    return u_d_;
   }
 
 

@@ -27,6 +27,8 @@ namespace tum_ics_ur_robot_lli
       JointState q_home_;
       JointState q_park_;
 
+      Vector3d working_position_;
+
       ros::NodeHandle nh_;
       ros::Publisher control_data_pub_;
       tf::TransformBroadcaster dh_br;
