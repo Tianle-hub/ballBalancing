@@ -43,7 +43,7 @@ namespace tum_ics_ur_robot_lli
       Matrix6d Kd_c_;
       Matrix6d Ki_c_;
 
-      Eigen::Matrix<double,6,3> q_goal_;
+      Vector6d q_goal_;
       double spline_period_;
 
       Vector6d delta_q_;

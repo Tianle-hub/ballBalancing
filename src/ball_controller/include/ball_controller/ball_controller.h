@@ -66,6 +66,8 @@ namespace BallControl
       Eigen::Vector2d update(const double &time, const Eigen::Vector2d &u);
 
       Eigen::Vector4d getState();
+
+      void setRunning() {controllerState_ = ControllerState::RUNNING;};
     
     private:
       void pubBallTF();

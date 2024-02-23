@@ -17,7 +17,7 @@ namespace tum_ics_ur_robot_lli
       Kp_j_(Matrix6d::Zero()),
       Kd_j_(Matrix6d::Zero()),
       Ki_j_(Matrix6d::Zero()),
-      q_goal_(Eigen::Matrix<double,6,3>::Zero()),
+      q_goal_(Vector6d::Zero()),
       spline_period_(100.0),
       delta_q_(Vector6d::Zero()),
       delta_qp_(Vector6d::Zero())
@@ -92,6 +92,22 @@ namespace tum_ics_ur_robot_lli
       //////////////////////////////////// GET PID PARAMETER END ///////////////////////////
       
       // GOAL
+      // ros::param::get(ns + "/joint/goal", vec);
+      // if (vec.size() < STD_DOF)
+      // {
+      //   ROS_ERROR_STREAM("gains_p: wrong number of dimensions:" << vec.size());
+      //   m_error = true;
+      //   return false;
+      // }
+      // int k = 0;
+      // for (int j = 0; j < 3; j++)
+      // {
+      //   for (int i = 0; i < STD_DOF; i++)
+      //   {
+      //     q_goal_(i, j) = vec[k];
+      //     k++;
+      //   }
+      // }
       ros::param::get(ns + "/joint/goal", vec);
       if (vec.size() < STD_DOF)
       {
@@ -99,14 +115,9 @@ namespace tum_ics_ur_robot_lli
         m_error = true;
         return false;
       }
-      int k = 0;
-      for (int j = 0; j < 3; j++)
+      for (int i = 0; i < STD_DOF; i++)
       {
-        for (int i = 0; i < STD_DOF; i++)
-        {
-          q_goal_(i, j) = vec[k];
-          k++;
-        }
+        q_goal_(i) = vec[i];
       }
 
       // Working position
@@ -188,29 +199,31 @@ namespace tum_ics_ur_robot_lli
       
       VVector6d vQd;
       
-      if (time.tD() <= spline_period_)
+      if (time.tD() <= 20.)
       {
       // poly spline
-      vQd = getJointPVT5(q_start_, q_goal_.block<6,1>(0,0), time.tD(), spline_period_);
+      vQd = getJointPVT5(q_start_, q_goal_, time.tD(), spline_period_);
 
       tau = jointPDController(time, state, vQd);
-      } else if (time.tD() <= 3*spline_period_)
-      {
-      vQd = getJointPVT5(q_goal_.block<6,1>(0,0), q_goal_.block<6,1>(0,1), time.tD() - spline_period_, spline_period_);
+      }
+      // } else if (time.tD() <= 3*spline_period_)
+      // {
+      // vQd = getJointPVT5(q_goal_.block<6,1>(0,0), q_goal_.block<6,1>(0,1), time.tD() - spline_period_, spline_period_);
 
-      tau = jointPDController(time, state, vQd);
-      } else if (time.tD() > 3*spline_period_ && time.tD() <= 20.)
-      {
-      vQd = getJointPVT5(q_goal_.block<6,1>(0,1), q_goal_.block<6,1>(0,2), time.tD() - 3*spline_period_, spline_period_);
+      // tau = jointPDController(time, state, vQd);
+      // } else if (time.tD() > 3*spline_period_ && time.tD() <= 20.)
+      // {
+      // vQd = getJointPVT5(q_goal_.block<6,1>(0,1), q_goal_.block<6,1>(0,2), time.tD() - 3*spline_period_, spline_period_);
 
-      tau = jointPDController(time, state, vQd);
-      } 
+      // tau = jointPDController(time, state, vQd);
+      // } 
 
       // Cartesian space
       if (time.tD() > 20.)
       {
         if (!switch_to_carte_)
-        {
+        { 
+          ball_controller.setRunning();
           ROS_INFO_STREAM("Switched to cartesian space controller.");
           switch_to_carte_ = true;
         }
@@ -224,7 +237,7 @@ namespace tum_ics_ur_robot_lli
         // end effector rotation move with ball
         // rotation matrix transformed by euler angles on z, y, x axis
         // via absolute angle command
-        Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
+        Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
 
         // end effector rotation stay still
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
@@ -233,7 +246,7 @@ namespace tum_ics_ur_robot_lli
 
         x_goal << x_goal_t, x_goal_r.eulerAngles(0, 1, 2);
 
-        // ROS_INFO_STREAM("u_ball_d : \n" << u_ball_d);
+        ROS_INFO_STREAM("u_ball_d : \n" << u_ball_d);
 
         VVector6d EE_d;
         EE_d.resize(3);

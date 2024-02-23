@@ -81,6 +81,7 @@ namespace BallControl
     switch(controllerState_)
     {
       case WAITING:
+        // ROS_INFO_STREAM("waitin_x_:" << Eigen::Vector2d::Zero().transpose());
         return Eigen::Vector2d::Zero();
         break;
 
@@ -89,12 +90,15 @@ namespace BallControl
         {
           case MODEL:
             x_ = ballModel_.updateModel(time, u);
+            // ROS_INFO_STREAM("model_x_:" << x_.transpose()); 
+
             break;
           
           case CAMERA:
             KalmanFilter_.predict();
             KalmanFilter_.updateAcc(u);
             x_ = KalmanFilter_.getPosVel();
+            // ROS_INFO_STREAM("camera_x_:" << x_.transpose()); 
             break;
         }
 
@@ -107,6 +111,7 @@ namespace BallControl
         break;
 
       default:
+        // ROS_INFO_STREAM("default_x_:" << Eigen::Vector2d::Zero().transpose());
         return Eigen::Vector2d::Zero();
         break;
     }
@@ -157,7 +162,7 @@ namespace BallControl
 
         if (KalmanFilter_.init(x0))
         {
-          ROS_INFO_STREAM("Successfully initialize kalman filter.");
+          ROS_INFO_STREAM("Successfully initialize kalman filter with state: " << x0.transpose());
         } else
         {
           ROS_WARN_STREAM("Falied to initialize kalman filter!");
@@ -168,8 +173,8 @@ namespace BallControl
         Eigen::Vector2d pos(ball_pos_x, ball_pos_y);
         KalmanFilter_.updatePos(pos);
         
-        ROS_INFO_STREAM("Measurement: " << measure);
-        ROS_INFO("I heard: Position - [%f, %f]", ball_pos_x, ball_pos_y);
+        // ROS_INFO_STREAM("Measurement: " << measure);
+        // ROS_INFO("I heard: Position - [%f, %f]", ball_pos_x, ball_pos_y);
       }
     }
 
