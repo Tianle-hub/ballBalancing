@@ -27,9 +27,9 @@ int main(int argc, char **argv)
     ros::NodeHandle nh = ros::NodeHandle();
     ros::Time::init();
 
-    ros::Publisher position_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
-    ros::Publisher velocity_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
-    ros::Publisher acceleration_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration", 1);
+    ros::Publisher position_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_position_kal", 1);
+    ros::Publisher velocity_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_velocity_kal", 1);
+    ros::Publisher acceleration_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_kal", 1);
 
     auto camera_sub_ = nh.subscribe("ball_pos_vel", 1000, ball_pos_vel_Callback);
 

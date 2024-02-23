@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 
     auto kalman_filter  = BallControl::KalmanFilter();
 
-    kalman_filter.init(Eigen::Matrix<double,8,1>::Zero());
+    kalman_filter.gerParam();
 
     double t = 0;
     double t_prev = 0;
@@ -59,7 +59,17 @@ int main(int argc, char **argv)
 
         meas_ball_position.header.stamp = ros::Time::now();
 
-        kalman_filter.predict();
+        if (!kalman_filter.isInitialized())
+        {
+            Eigen::Matrix<double,8,1> x0 = Eigen::Matrix<double,8,1>::Zero();
+            x0(0) = zx(0);
+            x0(4) = zx(1);
+            kalman_filter.init(x0);
+        } else
+        {
+            kalman_filter.predict();
+        }
+
         if (t - t_prev >= 0.03)
         {
             kalman_filter.updatePos(zx);    

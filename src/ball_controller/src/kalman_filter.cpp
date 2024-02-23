@@ -12,7 +12,7 @@ namespace BallControl
 
   }
 
-  bool KalmanFilter::init(const Eigen::Matrix<double,8,1> &x0)
+  bool KalmanFilter::gerParam()
   {
     ROS_WARN_STREAM("KalmanFilter::init");
     std::vector<double> vec;
@@ -156,33 +156,64 @@ namespace BallControl
 
     I_ = Eigen::Matrix<double,8,8>::Identity();
 
-    x_ = x0;
+    x_ = Eigen::Matrix<double,8,1>::Zero();
+
+    initialized_ = false;
 
     return true;
 
+  }
+
+  bool KalmanFilter::init(const Eigen::Matrix<double,8,1> &x0)
+  {
+    x_ = x0;
+    initialized_ = true;
+    return initialized_;
   }
 
   bool KalmanFilter::predict()
   {
-    x_ = F_ * x_;
-    P_ = F_ * P_ * F_.transpose() + Q_;
-    return true;
+    if (!initialized_)
+    {
+      ROS_WARN_STREAM("Kalman filter is not initialized!");
+      return false;
+    } else
+    {
+      x_ = F_ * x_;
+      P_ = F_ * P_ * F_.transpose() + Q_;
+      return true;
+    }
+
   }
 
-  bool KalmanFilter::updatePos(const Eigen::Vector2d zx)
+  bool KalmanFilter::updatePos(const Eigen::Vector2d &zx)
   {
-    Kx_ = P_ * Hx_.transpose() * (Hx_ * P_ * Hx_.transpose() + Rx_.transpose()).inverse();
-    x_ = (I_ - Kx_ * Hx_) * x_ + Kx_ * zx;
-    P_ = (I_ - Kx_ * Hx_) * P_;
-    return true;
+    if (!initialized_)
+    {
+      ROS_WARN_STREAM("Kalman filter is not initialized!");
+      return false;
+    } else
+    {
+      Kx_ = P_ * Hx_.transpose() * (Hx_ * P_ * Hx_.transpose() + Rx_.transpose()).inverse();
+      x_ = (I_ - Kx_ * Hx_) * x_ + Kx_ * zx;
+      P_ = (I_ - Kx_ * Hx_) * P_;
+      return true;
+    }
   }
 
-  bool KalmanFilter::updateAcc(const Eigen::Vector2d za)
+  bool KalmanFilter::updateAcc(const Eigen::Vector2d &za)
   {
-    Ka_ = P_ * Ha_.transpose() * (Ha_ * P_ * Ha_.transpose() + Ra_.transpose()).inverse();
-    x_ = (I_ - Ka_ * Ha_) * x_ + Ka_ * za;
-    P_ = (I_ - Ka_ * Ha_) * P_;
-    return true;
+    if (!initialized_)
+    {
+      ROS_WARN_STREAM("Kalman filter is not initialized!");
+      return false;
+    } else
+    {
+      Ka_ = P_ * Ha_.transpose() * (Ha_ * P_ * Ha_.transpose() + Ra_.transpose()).inverse();
+      x_ = (I_ - Ka_ * Ha_) * x_ + Ka_ * za;
+      P_ = (I_ - Ka_ * Ha_) * P_;
+      return true;
+      }
   }
 
   Eigen::Matrix<double,8,1> KalmanFilter::getState()
@@ -195,4 +226,8 @@ namespace BallControl
     return Eigen::Vector4d(x_(0), x_(1), x_(2), x_(3));
   }
 
+  bool KalmanFilter::isInitialized()
+  {
+    return initialized_;
+  }
 }
