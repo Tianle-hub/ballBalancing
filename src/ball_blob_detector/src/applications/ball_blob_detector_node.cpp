@@ -60,6 +60,7 @@ int main(int argc, char **argv)
    */
   int count = 0;
   double time = ros::Time::now().toSec();
+  ros::Duration(10.).sleep();
   while (ros::ok())
   {
     // Calibration 

@@ -24,8 +24,8 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      ball_controller.init(Vector4d(0.2, -0.1, 0.2, -0.1), BallControl::BallType::MODEL);  // init_state, init_velocity
-      // ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
+      // ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
+      ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
     
     }
 
@@ -237,10 +237,10 @@ namespace tum_ics_ur_robot_lli
         // end effector rotation move with ball
         // rotation matrix transformed by euler angles on z, y, x axis
         // via absolute angle command
-        // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
+        Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
 
         // end effector rotation stay still
-        Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
+        // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
 
         Vector6d x_goal;
 
@@ -422,7 +422,7 @@ namespace tum_ics_ur_robot_lli
 
       // Sq(3) = -Sq(3);
 
-      Vector6d tau = - Kd_c_ * Sq + Yr * Theta;
+      Vector6d tau = - 2.0*Kd_c_ * Sq + Yr * Theta;
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;

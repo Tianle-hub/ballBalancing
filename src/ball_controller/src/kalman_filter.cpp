@@ -195,7 +195,6 @@ namespace BallControl
       Kx_ = P_ * Hx_.transpose() * (Hx_ * P_ * Hx_.transpose() + Rx_.transpose()).inverse();
       x_ = (I_ - Kx_ * Hx_) * x_ + Kx_ * zx;
       P_ = (I_ - Kx_ * Hx_) * P_;
-      ROS_INFO_STREAM("updatePos_x_" << x_.transpose());
       return true;
     }
   }
@@ -210,7 +209,6 @@ namespace BallControl
     {
       Ka_ = P_ * Ha_.transpose() * (Ha_ * P_ * Ha_.transpose() + Ra_.transpose()).inverse();
       x_ = (I_ - Ka_ * Ha_) * x_ + Ka_ * za;
-      ROS_INFO_STREAM("updateAcc_x_" << x_.transpose());
       P_ = (I_ - Ka_ * Ha_) * P_;
       return true;
       }

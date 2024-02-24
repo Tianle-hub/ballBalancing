@@ -105,7 +105,7 @@ namespace BallControl
         pubBallTF();
         pubState();
 
-        u_d_ = -K_ * x_;
+        u_d_ = -0.8*K_ * x_;
         return u_d_;
 
         break;

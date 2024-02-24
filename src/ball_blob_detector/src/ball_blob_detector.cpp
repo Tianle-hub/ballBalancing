@@ -148,7 +148,7 @@ void BallBlobDetector::setupPlateCoordinate()
             // std::cout << "plate center coordinate in pixel:\n" << PlatePixelCenter << std::endl;
             k_pixel_length = CenterLength/ PlatePixelSize(0,0);
             k_pixel_width = CenterWidth/ PlatePixelSize(1,0);
-            // std::cout << "k_pixel: " << k_pixel_length << ", " << k_pixel_width << std::endl;
+            std::cout << "k_pixel: " << k_pixel_length << ", " << k_pixel_width << std::endl;
 
             // Draw axis for each marker
             for (int i = 0; i < markerIds.size(); i++)
@@ -176,8 +176,8 @@ void BallBlobDetector::setupPlateCoordinate()
                 k_pixel_width_fixed = k_pixel_width;
             }
 
-            if (abs(PlatePixelCenter_fixed(0,0) - PlatePixelCenter(0,0)) >= 20 ||
-                abs(PlatePixelCenter_fixed(1,0) - PlatePixelCenter(1,0)) >= 20 ){
+            if (abs(PlatePixelCenter_fixed(0,0) - PlatePixelCenter(0,0)) >= 10 ||
+                abs(PlatePixelCenter_fixed(1,0) - PlatePixelCenter(1,0)) >= 10 ){
                 
                 ROS_INFO("Calibration updated ");
                 // update pixel center 
@@ -223,7 +223,7 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
     cv::Mat maskYellowOrange;
     // Adjust the hue values to target yellow to orange.
     // These values might need to be fine-tuned based on your specific lighting conditions and the exact color of the ball.
-    cv::inRange(hsvImage, cv::Scalar(15, 70, 50), cv::Scalar(30, 255, 255), maskYellowOrange);
+    cv::inRange(hsvImage, cv::Scalar(20, 80, 100), cv::Scalar(60, 255, 255), maskYellowOrange);
 
     cv::Mat maskOrange;
     cv::inRange(hsvImage, cv::Scalar(10, 100, 20), cv::Scalar(22, 255, 255), maskOrange);
@@ -248,6 +248,8 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
     std::vector<cv::KeyPoint> keypoints;
     detector->detect(maskYellowOrange, keypoints); // maskYellowOrange, redMask_hsv
     std::vector<cv::KeyPoint> largestBlob;
+
+    cv::imshow("mask_yellow", maskYellowOrange);
     if (!keypoints.empty())
     {
         // Sort keypoints by size in descending order
