@@ -422,7 +422,7 @@ namespace tum_ics_ur_robot_lli
 
       // Sq(3) = -Sq(3);
 
-      Vector6d tau = - 2.0*Kd_c_ * Sq + Yr * Theta;
+      Vector6d tau = - 1.7*Kd_c_ * Sq + Yr * Theta;
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
