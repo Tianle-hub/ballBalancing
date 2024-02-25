@@ -89,22 +89,26 @@ namespace state_action_factory
             case 'W':
             case 'w':
                 std::cout << "Move Up" << std::endl;
-                plate_angle(0) += 0.01;
+                plate_angle(0) += 0.02;
+                return plate_angle;
                 break;
             case 'A':
             case 'a':
                 std::cout << "Move Left" << std::endl;
-                plate_angle(1) += 0.01;
+                plate_angle(1) += 0.02;
+                return plate_angle;
                 break;
             case 'S':
             case 's':
                 std::cout << "Move Down" << std::endl;
-                plate_angle(0) -= 0.01;
+                plate_angle(0) -= 0.02;
+                return plate_angle;
                 break;
             case 'D':
             case 'd':
                 std::cout << "Move Right" << std::endl;
-                plate_angle(1) -= 0.01;
+                plate_angle(1) -= 0.02;
+                return plate_angle;
                 break;
             case 'Q':
             case 'q':
@@ -116,6 +120,7 @@ namespace state_action_factory
         std::cout << "Next command: ";
         }
         return plate_angle;
+        
     }
 
 

@@ -263,7 +263,7 @@ namespace tum_ics_ur_robot_lli
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
 
         plate_angle = state_action_factory::readCommand(plate_angle);
-
+        ROS_INFO_STREAM("plate_angle"<<plate_angle);
         // end effector rotation stay still
         Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
 
