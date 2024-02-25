@@ -28,7 +28,7 @@ namespace tum_ics_ur_robot_lli
       // ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
       
       // will it return call back
-      ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
+      ball_controller.init(BallControl::BallType::CAMERA);  // MODEL CAMERA
     
     }
 
@@ -51,6 +51,7 @@ namespace tum_ics_ur_robot_lli
 
     bool UR10EffortControl::init()
     {
+
       ROS_WARN_STREAM("UR10EffortControl::init");
       std::vector<double> vec;
 
@@ -177,6 +178,8 @@ namespace tum_ics_ur_robot_lli
         Kp_c_(i, i) = vec[i];
       }
       ROS_WARN_STREAM("Kp of joint space controller: \n" << Kp_c_);
+
+      plate_angle<<0.0, 0.0;
       return true;
     }
 
@@ -238,24 +241,31 @@ namespace tum_ics_ur_robot_lli
         // end effector rotation: two angle; 2,1,0??
         
         Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1, 0);
-        Vector2d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1);
-        double pitch = EE_pos_r(1); // Axis 1: Rotation around the Y-axis (pitch) 
-        double roll = EE_pos_r(2);  //Axis 0: Rotation around the X-axis (roll)
+        Vector2d EE_pos_r_xy;
+        EE_pos_r_xy<<EE_pos_r(2), EE_pos_r(1);
+
+        // Vector2d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1); // test whether work
+        // double pitch = EE_pos_r(1); // Axis 1: Rotation around the Y-axis (pitch) 
+        // double roll = EE_pos_r(2);  //Axis 0: Rotation around the X-axis (roll)
 
         // TODO: discretize ball position
         Eigen::Vector2d discretized_ball_pos = state_action_factory::encodeBallStateGrid(x_ball, 20, -0.25, 0.25);
         ROS_INFO_STREAM("discretized_ball_pos"<<discretized_ball_pos);
         // TODO: discretize end effector rotation
-        Eigen::Vector2d discretized_EE_euler = state_action_factory::encodeEndeffectorState(EE_pos_r, 10, -0.0872, 0.0872);
-        ROS_INFO_STREAM("discretized_ball_pos"<<discretized_EE_euler);
+        Eigen::Vector2d discretized_EE_euler = state_action_factory::encodeEndeffectorState(EE_pos_r_xy, 10, -0.0872, 0.0872);
+        ROS_INFO_STREAM("discretized_EE_euler"<<discretized_EE_euler);
+
+        //x_ball, int angle_size, int dis_size, int minCoord, int maxCoord
+        Eigen::Vector4d discretized_ball_pos_velo_polar = state_action_factory::encodeBallPosVeloPolar(x_ball, 16, 5, 0, 0.2);
+        ROS_INFO_STREAM("discretized_ball_pos_velo_polar"<<discretized_ball_pos_velo_polar);
 
 
+        // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
 
-
-        Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
+        plate_angle = state_action_factory::readCommand(plate_angle);
 
         // end effector rotation stay still
-        // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
+        Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
 
         Vector3d x_goal_t = working_position_;
         // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;  //move along z-axis?
@@ -471,15 +481,17 @@ namespace tum_ics_ur_robot_lli
       return tau;
     }
 
-    Vector2d UR10EffortControl::updateBallController(const double &time, const JointState &state)
+    Vector4d UR10EffortControl::updateBallController(const double &time, const JointState &state)
     {
       Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1, 0);
 
       Vector2d ball_u = Vector2d(EE_pos_r(1), EE_pos_r(2));
+      // double pitch = EE_pos_r(1); // Axis 1: Rotation around the Y-axis (pitch) 
+      // double roll = EE_pos_r(2);  //Axis 0: Rotation around the X-axis (roll)
 
-      Vector2d u_ball_d = ball_controller.update(time, ball_u);
+      Vector4d x_ball = ball_controller.update(time, ball_u);
 
-      return u_ball_d;
+      return x_ball;
     }
 
 

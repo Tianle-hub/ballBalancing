@@ -53,6 +53,8 @@ namespace tum_ics_ur_robot_lli
 
       BallControl::BallController ball_controller;
 
+      Vector2d plate_angle;
+
     public:
       UR10EffortControl(double weight = 1.0, const QString &name = "UR10EffortCtrl");
 
@@ -81,7 +83,7 @@ namespace tum_ics_ur_robot_lli
 
       Vector6d cartesianPDController(const RobotTime &time, const JointState &state, const VVector6d &EE_r);
 
-      Vector2d updateBallController(const double &time, const JointState &state);
+      Vector4d updateBallController(const double &time, const JointState &state);
 
       
     };

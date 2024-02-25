@@ -145,7 +145,6 @@ add_library(my_ball_controller
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(ball_controller_test src/applications/ball_controller_test.cpp)
 add_executable(kalman_filter_test src/applications/kalman_filter_test.cpp)
 add_executable(kalman_filter_test_with_camera src/applications/kalman_filter_test_with_camera.cpp)
 
@@ -157,10 +156,7 @@ add_executable(kalman_filter_test_with_camera src/applications/kalman_filter_tes
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(ball_controller_test 
-                ${std_msgs_EXPORTED_TARGETS} 
-                ${catkin_EXPORTED_TARGETS}
-                ${geometry_msgs_EXPORTED_TARGETS})
+
 add_dependencies(kalman_filter_test 
                 ${std_msgs_EXPORTED_TARGETS} 
                 ${catkin_EXPORTED_TARGETS}
@@ -171,11 +167,7 @@ add_dependencies(kalman_filter_test_with_camera
                 ${geometry_msgs_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ball_controller_test
-  my_ball_controller
-  ${catkin_LIBRARIES}
-  ${roscpp_LIBRARIES}
-)
+
 target_link_libraries(kalman_filter_test
   my_ball_controller
   ${catkin_LIBRARIES}
