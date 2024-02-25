@@ -20,12 +20,13 @@ namespace tum_ics_ur_robot_lli
       q_goal_(Vector6d::Zero()),
       spline_period_(100.0),
       delta_q_(Vector6d::Zero()),
-      delta_qp_(Vector6d::Zero())
+      delta_qp_(Vector6d::Zero()),
+      tau_limits_(Vector6d::Zero())
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
-      // ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
+      // ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
+      ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
     
     }
 
@@ -174,6 +175,20 @@ namespace tum_ics_ur_robot_lli
         Kp_c_(i, i) = vec[i];
       }
       ROS_WARN_STREAM("Kp of joint space controller: \n" << Kp_c_);
+
+      ros::param::get(ns + "/tau_limits", vec);
+      if (vec.size() < STD_DOF)
+      {
+        ROS_ERROR_STREAM("tau_limits: wrong number of dimensions:" << vec.size());
+        m_error = true;
+        return false;
+      }
+      for (int i = 0; i < STD_DOF; i++)
+      {
+        tau_limits_(i) = vec[i];
+      }
+      ROS_WARN_STREAM("tau_limits: \n" << tau_limits_.transpose());
+
       return true;
     }
 
@@ -334,6 +349,8 @@ namespace tum_ics_ur_robot_lli
 
       tau = -Kd_j_ * Sq + Yr * Theta;
 
+      tau = checkTauLimits(tau);
+
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
       msg.header.stamp = ros::Time::now();
@@ -422,7 +439,9 @@ namespace tum_ics_ur_robot_lli
 
       // Sq(3) = -Sq(3);
 
-      Vector6d tau = - 1.0*Kd_c_ * Sq + Yr * Theta; //1.7
+      Vector6d tau = - 1.5*Kd_c_ * Sq + Yr * Theta; //1.7
+
+      tau = checkTauLimits(tau);
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
@@ -450,11 +469,32 @@ namespace tum_ics_ur_robot_lli
       return tau;
     }
 
+    Vector6d UR10EffortControl::checkTauLimits(const Vector6d &tau)
+    {
+      Vector6d tau_new = tau;
+
+      for (int i = 0; i < STD_DOF; i++)
+      {
+        if (abs(tau_new(i)) > tau_limits_(i))
+        {
+          if (tau_new(i) > 0)
+          {
+            tau_new(i) = tau_limits_(i);
+          } else
+          {
+            tau_new(i) = -tau_limits_(i);
+          }
+          ROS_WARN_STREAM("jont " + std::to_string(i) + " exceed limits. " + std::to_string(tau(i)) + " -->"  + std::to_string(tau_new(i)));
+        }
+      }
+      return tau_new;
+    }
+
     Vector2d UR10EffortControl::updateBallController(const double &time, const JointState &state)
     {
       Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1, 0);
 
-      Vector2d ball_u = Vector2d(EE_pos_r(1), EE_pos_r(2));
+      Vector2d ball_u = Vector2d(EE_pos_r(1), -EE_pos_r(2));
 
       Vector2d u_ball_d = ball_controller.update(time, ball_u);
 

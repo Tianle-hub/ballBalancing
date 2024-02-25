@@ -27,6 +27,8 @@ namespace tum_ics_ur_robot_lli
       JointState q_home_;
       JointState q_park_;
 
+      Vector6d tau_limits_;
+
       Vector3d working_position_;
 
       ros::NodeHandle nh_;
@@ -71,9 +73,11 @@ namespace tum_ics_ur_robot_lli
 
       bool stop();
 
-      Matrix3d eulerXYZToRotationMatrix(const Vector3d &euler);
-
       bool pubDH(const std::vector<Matrix4d> &H_stack, const std::vector<Matrix4d> &Hcm_stack);
+
+      Vector6d checkTauLimits(const Vector6d &tau);
+
+      Matrix3d eulerXYZToRotationMatrix(const Vector3d &euler);
 
       Vector6d update(const RobotTime &time, const JointState &state);
 
@@ -82,7 +86,6 @@ namespace tum_ics_ur_robot_lli
       Vector6d cartesianPDController(const RobotTime &time, const JointState &state, const VVector6d &EE_r);
 
       Vector2d updateBallController(const double &time, const JointState &state);
-
     };
 
   } // namespace RobotControllers

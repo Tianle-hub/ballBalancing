@@ -28,3 +28,5 @@ ur10_effort_ctrl:
     
     #derivative
     gains_d: [100, 75, 75, 73, 15, 5]
+
+  tau_limits: [200, 150, 50, 30, 30, 30]
