@@ -249,22 +249,41 @@ namespace tum_ics_ur_robot_lli
         // double roll = EE_pos_r(2);  //Axis 0: Rotation around the X-axis (roll)
 
         // TODO: discretize ball position
-        Eigen::Vector2d discretized_ball_pos = state_action_factory::encodeBallStateGrid(x_ball, 20, -0.25, 0.25);
-        ROS_INFO_STREAM("discretized_ball_pos"<<discretized_ball_pos);
+        Eigen::Vector2d discretized_ball_pos = state_action_factory::encodeBallStateGrid(x_ball, num_ball_grid, -ball_range, ball_range);
+        ROS_INFO_STREAM("discretized_ball_pos \n"<<discretized_ball_pos);
         // TODO: discretize end effector rotation
-        Eigen::Vector2d discretized_EE_euler = state_action_factory::encodeEndeffectorState(EE_pos_r_xy, 10, -0.0872, 0.0872);
-        ROS_INFO_STREAM("discretized_EE_euler"<<discretized_EE_euler);
+        Eigen::Vector2d discretized_EE_euler = state_action_factory::encodeEndeffectorState(EE_pos_r_xy, num_robot, -robot_rotation_range, robot_rotation_range);
+        // Output: discretized_EE_euler_x, discretized_EE_euler_y
+        ROS_INFO_STREAM("discretized_EE_euler \n"<<discretized_EE_euler);
 
         //x_ball, int angle_size, int dis_size, int minCoord, int maxCoord
-        Eigen::Vector4d discretized_ball_pos_velo_polar = state_action_factory::encodeBallPosVeloPolar(x_ball, 16, 5, 0, 0.2);
-        ROS_INFO_STREAM("discretized_ball_pos_velo_polar"<<discretized_ball_pos_velo_polar);
+        Eigen::Vector4d discretized_ball_pos_velo_polar = state_action_factory::encodeBallPosVeloPolar(x_ball, num_ball_polar_theta, num_ball_polar_radius, 0, ball_range);
+        // Output: encodedPosAngle, encodedPosDis, encodedVeloAngle, 0
+        ROS_INFO_STREAM("discretized_ball_pos_velo_polar \n"<<discretized_ball_pos_velo_polar);
 
+
+        // TODO: get state index
+        // encodedPosAngle: num_ball_polar_theta, encodedPosDis: num_ball_polar_radius
+        // discretized_EE_euler_x: num_robot, discretized_EE_euler_y: num_robot
+        curr_state_index = discretized_ball_pos_velo_polar(0)*num_ball_polar_theta*num_ball_polar_radius*num_robot 
+                      + discretized_ball_pos_velo_polar(1)*num_ball_polar_radius*num_robot 
+                      + discretized_EE_euler(0)*num_robot 
+                      + discretized_EE_euler(1);
+        
+
+
+        // TODO: construnct Q table by only ball pos + robot orientation
+
+        // TODO: eposilon greedy action
+        // Action space: 0~8
 
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
 
-        plate_angle = state_action_factory::readCommand(plate_angle);
+        // plate_angle = state_action_factory::readCommand(plate_angle);
+        // plate_angle(0) = 0.1*sin(0.2*(time.tD()-20.));
+        plate_angle(1) = 0.1*sin(0.2*(time.tD()-20.));   // rotate X axis, change y
         ROS_INFO_STREAM("plate_angle"<<plate_angle);
-        // end effector rotation stay still
+        // end effector rotate correspond to action 
         Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
 
         Vector3d x_goal_t = working_position_;

@@ -5,7 +5,7 @@
 #include <tf/transform_broadcaster.h>
 #include <ur10_controller/UR10Model.h>
 #include <ball_controller/ball_controller.h>
-
+#include <cmath>
 namespace tum_ics_ur_robot_lli
 {
   namespace RobotControllers
@@ -53,7 +53,18 @@ namespace tum_ics_ur_robot_lli
 
       BallControl::BallController ball_controller;
 
+      // Variables for Q learning
       Vector2d plate_angle;
+      double ball_range = 0.2;
+      double robot_rotation_range = 0.1;
+      int num_ball_grid = 20;
+      int num_ball_polar_theta = 15;
+      int num_ball_polar_radius = 5;
+      int num_robot = 10;
+      int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
+      int num_action = 9;
+      Eigen::Matrix2d Q_table(num_state, num_action);
+      int curr_state_index;
 
     public:
       UR10EffortControl(double weight = 1.0, const QString &name = "UR10EffortCtrl");

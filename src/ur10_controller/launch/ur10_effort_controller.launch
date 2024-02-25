@@ -19,7 +19,7 @@
     <rosparam file="$(find ball_controller)/configs/kalman_filter.yaml" command="load" />
   </node>
 
-  <node name="ball_blob_detector" pkg="ball_blob_detector" type="ball_blob_detector_node"/>
+  <!-- <node name="ball_blob_detector" pkg="ball_blob_detector" type="ball_blob_detector_node"/> -->
 
   
 

@@ -12,6 +12,17 @@ namespace state_action_factory
     Eigen::Vector2d encodeEndeffectorState(Eigen::Vector2d &EE_pos_r, int size);
     int discretizeCoordinate(double coordinate, int size, double minCoord, double maxCoord);
 
+    double getReward(Eigen::Vector4d discretized_ball_pos_velo_polar, Eigen::Vector2d discretized_EE_euler)
+    {
+        double reward;
+        int encodedBallPosAngle = discretized_ball_pos_velo_polar(0);
+        int encodedBallPosDis = discretized_ball_pos_velo_polar(1);
+        int encodedEEx = discretized_EE_euler(0);
+        int encodedEEy = discretized_EE_euler(1);
+
+        return reward;
+    }
+
     Eigen::Vector2d encodeBallStateGrid(Eigen::Vector4d &x_ball, int size, double minCoord, double maxCoord)
     {
         // px vx py vy
@@ -56,7 +67,7 @@ namespace state_action_factory
         int discretized_EE_euler_y = discretizeCoordinate(EE_pos_r(1), size, minCoord, maxCoord);
         
         Eigen::Vector2d EE_euler;
-        EE_euler<<discretized_EE_euler_x, discretized_EE_euler_x;
+        EE_euler<<discretized_EE_euler_x, discretized_EE_euler_y;
         return EE_euler;
     }
 
