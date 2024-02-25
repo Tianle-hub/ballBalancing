@@ -63,7 +63,7 @@ namespace BallControl
 
       bool init(const BallControl::BallType ballType);
       
-      Eigen::Vector2d update(const double &time, const Eigen::Vector2d &u);
+      Eigen::Vector4d update(const double &time, const Eigen::Vector2d &u);
 
       Eigen::Vector4d getState();
 

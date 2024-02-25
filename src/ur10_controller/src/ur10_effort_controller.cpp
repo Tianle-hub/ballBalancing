@@ -1,6 +1,7 @@
 #include <ur10_controller/ur10_effort_controller.h>
 #include <tum_ics_ur_robot_msgs/ControlData.h>
 #include <chrono>
+#include <ur10_controller/state_action.h>
 
 namespace tum_ics_ur_robot_lli
 {
@@ -25,6 +26,8 @@ namespace tum_ics_ur_robot_lli
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
       // ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
+      
+      // will it return call back
       ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
     
     }
@@ -227,20 +230,35 @@ namespace tum_ics_ur_robot_lli
           ROS_INFO_STREAM("Switched to cartesian space controller.");
           switch_to_carte_ = true;
         }
-        Vector3d x_goal_t = working_position_;
-        // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;  //move along z-axis?
 
-        Vector2d u_ball_d = updateBallController(time.tD() - 20., state);
 
-        // ball
+        // ball position and velocity
+        Vector4d x_ball = updateBallController(time.tD() - 20., state);
 
-        // end effector rotation move with ball
-        // rotation matrix transformed by euler angles on z, y, x axis
-        // via absolute angle command
+        // end effector rotation: two angle; 2,1,0??
+        
+        Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1, 0);
+        Vector2d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1);
+        double pitch = EE_pos_r(1); // Axis 1: Rotation around the Y-axis (pitch) 
+        double roll = EE_pos_r(2);  //Axis 0: Rotation around the X-axis (roll)
+
+        // TODO: discretize ball position
+        Eigen::Vector2d discretized_ball_pos = state_action_factory::encodeBallStateGrid(x_ball, 20, -0.25, 0.25);
+        ROS_INFO_STREAM("discretized_ball_pos"<<discretized_ball_pos);
+        // TODO: discretize end effector rotation
+        Eigen::Vector2d discretized_EE_euler = state_action_factory::encodeEndeffectorState(EE_pos_r, 10, -0.0872, 0.0872);
+        ROS_INFO_STREAM("discretized_ball_pos"<<discretized_EE_euler);
+
+
+
+
         Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
 
         // end effector rotation stay still
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(0, Vector3d::UnitY()) * Eigen::AngleAxisd(0, Vector3d::UnitX())).toRotationMatrix();
+
+        Vector3d x_goal_t = working_position_;
+        // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;  //move along z-axis?
 
         Vector6d x_goal;
 
@@ -254,6 +272,9 @@ namespace tum_ics_ur_robot_lli
         EE_d[0] = x_goal;
         EE_d[1] = Vector6d::Zero();
         EE_d[2] = Vector6d::Zero();
+
+
+
 
         tau = cartesianPDController(time, state, EE_d);
       }

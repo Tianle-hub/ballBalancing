@@ -76,13 +76,14 @@ namespace BallControl
     return true;
   }
 
-  Eigen::Vector2d BallController::update(const double &time, const Eigen::Vector2d &u)
+  Eigen::Vector4d BallController::update(const double &time, const Eigen::Vector2d &u)
   {
+    // transform to update ball position and velocity
     switch(controllerState_)
     {
       case WAITING:
         // ROS_INFO_STREAM("waitin_x_:" << Eigen::Vector2d::Zero().transpose());
-        return Eigen::Vector2d::Zero();
+        return Eigen::Vector4d::Zero();
         break;
 
       case RUNNING:
@@ -102,17 +103,13 @@ namespace BallControl
             break;
         }
 
-        pubBallTF();
-        pubState();
-
-        u_d_ = -0.7*K_ * x_;
-        return u_d_;
+        return x_;
 
         break;
 
       default:
         // ROS_INFO_STREAM("default_x_:" << Eigen::Vector2d::Zero().transpose());
-        return Eigen::Vector2d::Zero();
+        return Eigen::Vector4d::Zero();
         break;
     }
   }
