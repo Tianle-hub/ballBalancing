@@ -24,9 +24,9 @@ ur10_effort_ctrl:
     
   cartesian:
     #proportional
-    gains_p: [2, 2, 2, 10, 8, 4]
+    gains_p: [1, 1, 1, 10, 8, 2]
     
     #derivative
     gains_d: [100, 75, 75, 73, 15, 5]
 
-  tau_limits: [200, 150, 50, 30, 30, 30]
+  tau_limits: [200, 150, 60, 50, 20, 50]

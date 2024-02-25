@@ -412,11 +412,11 @@ namespace tum_ics_ur_robot_lli
       Vector6d delta_xp = EE_vel - EE_d[1];
 
       // velocity reference in cartesian space
-      Vector6d EE_vel_ref = EE_d[1] - Kp_c_ * delta_x;
+      Vector6d EE_vel_ref = EE_d[1] - 1.8*Kp_c_ * delta_x;
 
       // acceleration reference in cartesian space
       Matrix6d Jee_dot = model_.computeEEJacobainDerivative(state.q, state.qp);
-      Vector6d EE_acc_ref = EE_d[2] - Kp_c_ * delta_xp;
+      Vector6d EE_acc_ref = EE_d[2] - 1.8*Kp_c_ * delta_xp;
 
       Vector6d Sx = EE_vel - EE_vel_ref;
       Vector6d Sq = Jee_inv * Sx;
@@ -439,7 +439,7 @@ namespace tum_ics_ur_robot_lli
 
       // Sq(3) = -Sq(3);
 
-      Vector6d tau = - 1.5*Kd_c_ * Sq + Yr * Theta; //1.7
+      Vector6d tau = - Kd_c_ * Sq + Yr * Theta; //1.7
 
       tau = checkTauLimits(tau);
 
