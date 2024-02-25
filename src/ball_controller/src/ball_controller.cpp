@@ -35,6 +35,8 @@ namespace BallControl
     // input
     u_d_ = Eigen::Vector2d::Zero();
 
+    unmeasured_frames_ = 0;
+
     initK();
 
     position_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
@@ -154,6 +156,8 @@ namespace BallControl
       ball_pos_x = ball_pos_vel.position.x;
       ball_pos_y = ball_pos_vel.position.y;
 
+      unmeasured_frames_ = 0;
+
       if (!KalmanFilter_.isInitialized())
       {
         Eigen::Matrix<double,8,1> x0 = Eigen::Matrix<double,8,1>::Zero();
@@ -175,6 +179,12 @@ namespace BallControl
         
         // ROS_INFO_STREAM("Measurement: " << measure);
         // ROS_INFO("I heard: Position - [%f, %f]", ball_pos_x, ball_pos_y);
+      }
+    } else
+    {
+      if (KalmanFilter_.isInitialized())
+      {
+        unmeasured_frames_ ++;
       }
     }
 

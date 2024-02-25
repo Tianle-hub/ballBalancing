@@ -24,8 +24,8 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      // ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
-      ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
+      ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
+      // ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
     
     }
 
@@ -351,7 +351,7 @@ namespace tum_ics_ur_robot_lli
         msg.Dq[i] = delta_q_(i);
         msg.Dqp[i] = delta_qp_(i);
 
-        msg.torques[i] = state.tau(i);
+        msg.torques[i] = tau(i);
       }
       control_data_pub_.publish(msg);
 
@@ -422,7 +422,7 @@ namespace tum_ics_ur_robot_lli
 
       // Sq(3) = -Sq(3);
 
-      Vector6d tau = - 1.7*Kd_c_ * Sq + Yr * Theta;
+      Vector6d tau = - 1.0*Kd_c_ * Sq + Yr * Theta; //1.7
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
@@ -443,7 +443,7 @@ namespace tum_ics_ur_robot_lli
         msg.DX[i] = delta_x(i);
         msg.DXp[i] = delta_xp(i);
 
-        msg.torques[i] = state.tau(i);
+        msg.torques[i] = tau(i);
       }
       control_data_pub_.publish(msg);
 

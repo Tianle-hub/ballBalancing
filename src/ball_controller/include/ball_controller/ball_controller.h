@@ -43,6 +43,8 @@ namespace BallControl
       ros::Publisher position_pb_;
       ros::Publisher velocity_pb_;
 
+      ros::Subscriber camera_sub_;
+
       tf::TransformBroadcaster br_;
 
       // why here no need to add class_name::variable_name
@@ -52,7 +54,7 @@ namespace BallControl
       double ball_velo_y;
       bool measure;
 
-      ros::Subscriber camera_sub_;
+      int unmeasured_frames_;
 
     public:
       BallController();
