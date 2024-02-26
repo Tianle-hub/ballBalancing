@@ -43,6 +43,7 @@ namespace BallControl
       ros::Publisher position_pb_;
       ros::Publisher velocity_pb_;
       ros::Publisher acceleration_pb_;
+      ros::Publisher angel_plate_pb_;
 
       ros::Subscriber camera_sub_;
 
@@ -80,6 +81,9 @@ namespace BallControl
       bool initK();
 
       void pubState();
+
+      void pubPlateAngel(const Eigen::Vector2d &u);
+
 
   };
 }

@@ -41,6 +41,8 @@ namespace BallControl
 
     position_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
     velocity_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
+    acceleration_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_kalman", 1);
+    angel_plate_pb_  = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_plate", 1);
     camera_sub_ = nh_.subscribe("ball_pos_vel", 1000, &BallController::ball_pos_vel_Callback, this);
 
     return true;
@@ -71,9 +73,10 @@ namespace BallControl
 
     initK();
 
-    position_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
-    velocity_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
-    acceleration_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration", 1);
+    position_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_position_kalman", 1);
+    velocity_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_velocity_kalman", 1);
+    acceleration_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_kalman", 1);
+    angel_plate_pb_  = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_plate", 1);
     camera_sub_ = nh_.subscribe("ball_pos_vel", 1000, &BallController::ball_pos_vel_Callback, this);
 
     return true;
@@ -105,6 +108,7 @@ namespace BallControl
             break;
         }
 
+        pubPlateAngel(u);
         pubBallTF();
         pubState();
 
@@ -130,6 +134,17 @@ namespace BallControl
     q.setRPY(0,0,0);
     transform.setRotation(q);
     br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "dh_joint_6", "ball"));
+  }
+
+  void BallController::pubPlateAngel(const Eigen::Vector2d &u)
+  {
+    geometry_msgs::Vector3Stamped ball_acceleration_plate;
+    ball_acceleration_plate.header.stamp = ros::Time::now();
+
+    ball_acceleration_plate.vector.x = u(0);
+    ball_acceleration_plate.vector.y = u(1);
+
+    angel_plate_pb_.publish(ball_acceleration_plate);
   }
 
   void BallController::pubState()
