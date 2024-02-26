@@ -98,7 +98,7 @@ namespace BallControl
           
           case CAMERA:
             KalmanFilter_.predict();
-            KalmanFilter_.updateAcc(u);
+            KalmanFilter_.updateAcc(Eigen::Vector2d(sin(u(0)), sin(u(1))));
             x_ = KalmanFilter_.getPosVel();
             // ROS_INFO_STREAM("camera_x_:" << x_.transpose()); 
             break;
