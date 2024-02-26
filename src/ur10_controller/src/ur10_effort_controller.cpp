@@ -452,9 +452,9 @@ namespace tum_ics_ur_robot_lli
 
     Vector2d UR10EffortControl::updateBallController(const double &time, const JointState &state)
     {
-      Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1, 0);
+      Vector3d EE_pos_r = model_.computeEEPos(state.q).block<3,3>(0,0).eulerAngles(2, 1, 0); //z y x 
 
-      Vector2d ball_u = Vector2d(EE_pos_r(1), EE_pos_r(2));
+      Vector2d ball_u = Vector2d(EE_pos_r(1), -EE_pos_r(2));
 
       Vector2d u_ball_d = ball_controller.update(time, ball_u);
 

@@ -79,7 +79,7 @@ namespace BallControl
 
   void BallModel::integrate(const double &timeStep)
   {
-    Eigen::Vector4d xp = A_ * x_ + B_ * Eigen::Vector2d(sin(u_(0)), sin(-u_(1)));
+    Eigen::Vector4d xp = A_ * x_ + B_ * Eigen::Vector2d(sin(u_(0)), sin(u_(1)));
     x_ += xp * timeStep;
   }
 
