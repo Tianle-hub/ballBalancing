@@ -11,6 +11,9 @@ namespace BallControl
     private:
     bool initialized_;
 
+    double var_j_;
+    double alpha_;
+
     Eigen::Matrix<double,8,1> x_;
     Eigen::Matrix<double,8,8> F_;
 

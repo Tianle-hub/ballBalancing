@@ -16,6 +16,7 @@ namespace BallControl
   {
     ROS_WARN_STREAM("KalmanFilter::init");
     std::vector<double> vec;
+    double var;
 
     // check namespace
     std::string ns = "~kalman_filter";
@@ -24,6 +25,16 @@ namespace BallControl
       ROS_ERROR_STREAM("KalmanFilter init(): Kalman filter parameters not defined in:" << ns);
       return false;
     }
+
+    // var_j
+    ros::param::get(ns + "/var_j", var);
+    var_j_ = var;
+    ROS_WARN_STREAM("var_j: \n" << var_j_);
+
+    // alpha
+    ros::param::get(ns + "/alpha", var);
+    alpha_ = var;
+    ROS_WARN_STREAM("var_j: \n" << alpha_);
 
     // F
     ros::param::get(ns + "/F", vec);
@@ -132,6 +143,10 @@ namespace BallControl
       }
     }
     ROS_WARN_STREAM("Q: \n" << Q_);
+
+    Q_ = 2 * alpha_ * var_j_ *Q_;
+
+    ROS_WARN_STREAM("Q with correction: \n" << Q_);
 
     // P
     ros::param::get(ns + "/P", vec);
