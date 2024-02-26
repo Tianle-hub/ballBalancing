@@ -288,7 +288,8 @@ namespace tum_ics_ur_robot_lli
         q_learning::action = q_learning::chooseAction(q_learning::currentState, q_learning::Q, q_learning::epsilon); // a(t)
         q_learning::action2plateAngle(q_learning::action);
 
-        if(q_learning::step>=q_learning::maxSteps || q_learning::done){
+        if(q_learning::step>=q_learning::maxSteps || q_learning::done)
+        {
             q_learning::step = 0;
             q_learning::done = false;
             q_learning::epsilon *=0.99;

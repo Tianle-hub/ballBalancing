@@ -70,11 +70,11 @@ namespace q_learning
         int encodedEEx = discretized_EE_euler(0);
         int encodedEEy = discretized_EE_euler(1);
 
-        if (encodedBallPosDis == 0 && VeloRadius<0.05){
+        if (encodedBallPosDis == 0 && VeloRadius<0.01){
             reward = 100;
             done = true;
         }
-        else if (encodedBallPosDis == 0 && VeloRadius>0.05) reward = 1;
+        else if (encodedBallPosDis == 0 && VeloRadius>0.01) reward = 1;
         else if (encodedBallPosDis == 1) reward = -1;
         else if (encodedBallPosDis == 2) reward = -2;
         else if (encodedBallPosDis == 3) reward = -4;  // check whether not exceed
