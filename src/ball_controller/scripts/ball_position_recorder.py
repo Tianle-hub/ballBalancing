@@ -4,11 +4,11 @@ import pandas as pd
 from ball_controller.msg import PosVel2D
 from geometry_msgs.msg import Vector3Stamped
 
-class SkinForceRecorder:
+class PositionRecorder:
 
     def  __init__(self, bag_path, csv_path):
 
-        rospy.Subscriber('/ball_position', Vector3Stamped, self.callback)
+        rospy.Subscriber('/ball_pos_vel', PosVel2D, self.callback)
         self.bag = rosbag.Bag(bag_path, 'w')
 
 
@@ -34,8 +34,8 @@ def bagToCsv(bag_path, csv_path):
     for topic, msg, t in bag.read_messages(topics = 'PosVel2D'):
 
         row = {
-            'x': msg.vector.x,
-            'y': msg.vector.y}
+            'x': msg.position.x,
+            'y': msg.position.y}
         
         data.append(row)
 
@@ -45,6 +45,8 @@ def bagToCsv(bag_path, csv_path):
 
     print('standard deviation:')
     print(df.std())
+    print('variance:')
+    print(df.var())
 
     bag.close()
 
@@ -57,7 +59,7 @@ if __name__ == '__main__':
     csv_file_path = 'src/ball_controller/data/position.csv'
     
     try:
-        recorder = SkinForceRecorder(bag_file_path, csv_file_path)
+        recorder = PositionRecorder(bag_file_path, csv_file_path)
         print('recording...')
         rospy.spin()
 

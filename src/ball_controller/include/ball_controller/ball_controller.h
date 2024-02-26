@@ -42,6 +42,7 @@ namespace BallControl
       
       ros::Publisher position_pb_;
       ros::Publisher velocity_pb_;
+      ros::Publisher acceleration_pb_;
 
       ros::Subscriber camera_sub_;
 

@@ -241,15 +241,15 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
 
     // Morphological operations
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-    cv::morphologyEx(maskYellowOrange, maskYellowOrange, cv::MORPH_CLOSE, kernel); // maskYellowOrange, redMask_hsv
-    cv::morphologyEx(maskYellowOrange, maskYellowOrange, cv::MORPH_OPEN, kernel);  // maskYellowOrange, redMask_hsv
+    cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_CLOSE, kernel); // maskYellowOrange, redMask_hsv
+    cv::morphologyEx(redMask_hsv, redMask_hsv, cv::MORPH_OPEN, kernel);  // maskYellowOrange, redMask_hsv
 
     // Detect blobs on the red mask
     std::vector<cv::KeyPoint> keypoints;
-    detector->detect(maskYellowOrange, keypoints); // maskYellowOrange, redMask_hsv
+    detector->detect(redMask_hsv, keypoints); // maskYellowOrange, redMask_hsv
     std::vector<cv::KeyPoint> largestBlob;
 
-    cv::imshow("mask_yellow", maskYellowOrange);
+    cv::imshow("mask_yellow", redMask_hsv);
     if (!keypoints.empty())
     {
         // Sort keypoints by size in descending order
