@@ -233,6 +233,7 @@ namespace tum_ics_ur_robot_lli
           ROS_INFO_STREAM("Switched to cartesian space controller.");
           switch_to_carte_ = true;
         }
+        
 
 
         // ball position and velocity
@@ -249,33 +250,51 @@ namespace tum_ics_ur_robot_lli
         // double roll = EE_pos_r(2);  //Axis 0: Rotation around the X-axis (roll)
 
         // TODO: discretize ball position
-        Eigen::Vector2d discretized_ball_pos = state_action_factory::encodeBallStateGrid(x_ball, num_ball_grid, -ball_range, ball_range);
+        Eigen::Vector2d discretized_ball_pos = q_learning::encodeBallStateGrid(x_ball, num_ball_grid, -ball_range, ball_range);
         ROS_INFO_STREAM("discretized_ball_pos \n"<<discretized_ball_pos);
         // TODO: discretize end effector rotation
-        Eigen::Vector2d discretized_EE_euler = state_action_factory::encodeEndeffectorState(EE_pos_r_xy, num_robot, -robot_rotation_range, robot_rotation_range);
+        Eigen::Vector2d discretized_EE_euler = q_learning::encodeEndeffectorState(EE_pos_r_xy, num_robot, -robot_rotation_range, robot_rotation_range);
         // Output: discretized_EE_euler_x, discretized_EE_euler_y
         ROS_INFO_STREAM("discretized_EE_euler \n"<<discretized_EE_euler);
 
         //x_ball, int angle_size, int dis_size, int minCoord, int maxCoord
-        Eigen::Vector4d discretized_ball_pos_velo_polar = state_action_factory::encodeBallPosVeloPolar(x_ball, num_ball_polar_theta, num_ball_polar_radius, 0, ball_range);
+        Eigen::Vector4d discretized_ball_pos_velo_polar = q_learning::encodeBallPosVeloPolar(x_ball, num_ball_polar_theta, num_ball_polar_radius, 0, ball_range);
         // Output: encodedPosAngle, encodedPosDis, encodedVeloAngle, 0
         ROS_INFO_STREAM("discretized_ball_pos_velo_polar \n"<<discretized_ball_pos_velo_polar);
+
+
+        
+        
+
+
+        // TODO: construnct Q table by only ball pos + robot orientation
+        if(Q_init)
+        {
+            step++;
+            nextState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
+                                            num_ball_polar_theta, num_ball_polar_radius, num_robot);
+            reward = q_learning::getReward(discretized_ball_pos_velo_polar, discretized_EE_euler, ball_range);
+            q_learning::updateQ(Q, currentState, action, reward, nextState);
+            
+        }
+        
 
 
         // TODO: get state index
         // encodedPosAngle: num_ball_polar_theta, encodedPosDis: num_ball_polar_radius
         // discretized_EE_euler_x: num_robot, discretized_EE_euler_y: num_robot
-        curr_state_index = discretized_ball_pos_velo_polar(0)*num_ball_polar_theta*num_ball_polar_radius*num_robot 
-                      + discretized_ball_pos_velo_polar(1)*num_ball_polar_radius*num_robot 
-                      + discretized_EE_euler(0)*num_robot 
-                      + discretized_EE_euler(1);
-        
+        if(Q_init) currentState = nextState;
+        else currentState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
+                                                 num_ball_polar_theta, num_ball_polar_radius, num_robot);
 
+        action = q_learning::chooseAction(currentState);
 
-        // TODO: construnct Q table by only ball pos + robot orientation
 
         // TODO: eposilon greedy action
+
+
         // Action space: 0~8
+
 
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
 
@@ -303,8 +322,9 @@ namespace tum_ics_ur_robot_lli
         EE_d[2] = Vector6d::Zero();
 
 
-
-
+        if (!Q_init){
+          Q_init = true;
+        }
         tau = cartesianPDController(time, state, EE_d);
       }
 

@@ -5,23 +5,142 @@
 #include <ros/ros.h>
 #include <eigen3/Eigen/Dense>
 #include <cmath>
-namespace state_action_factory
+
+// Variables for Q learning
+Vector2d plate_angle::Zero;
+double ball_range = 0.2;
+double robot_rotation_range = 0.1;
+int num_ball_grid = 20;
+int num_ball_polar_theta = 15;
+int num_ball_polar_radius = 5;
+int num_robot = 10;
+int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
+int num_action = 9;
+Eigen::MatrixXd Q(num_state, num_action)::Zero();
+
+bool Q_init = false;
+const int numEpisodes = 1000; // Total number of episodes to run
+const int maxSteps = 100; // Maximum steps per episode
+int episode = 0;
+int step = 0;
+int currentState;
+int nextState;
+int action;
+bool done;
+double reward = 0;
+
+const double alpha = 0.1; // Learning rate
+const double gamma = 0.99; // Discount factor
+double epsilon = 0.1; // Epsilon for epsilon-greedy policy
+
+namespace q_learning
 {
+
+
     Eigen::Vector2d encodeBallStateGrid(Eigen::Vector4d &x_ball, int size, double minCoord, double maxCoord);
     Eigen::Vector4d encodeBallPosVeloPolar(Eigen::Vector4d &x_ball, int angle_size, int dis_size, double minCoord, double maxCoord);
     Eigen::Vector2d encodeEndeffectorState(Eigen::Vector2d &EE_pos_r, int size);
     int discretizeCoordinate(double coordinate, int size, double minCoord, double maxCoord);
+    
 
-    double getReward(Eigen::Vector4d discretized_ball_pos_velo_polar, Eigen::Vector2d discretized_EE_euler)
+
+
+    int getState(Eigen::Vector4d &discretized_ball_pos_velo_polar,
+                Eigen::Vector2d &discretized_EE_euler,
+                int num_ball_polar_theta, int num_ball_polar_radius, int num_robot)
+    {
+        int state_index = discretized_ball_pos_velo_polar(0)*num_ball_polar_theta*num_ball_polar_radius*num_robot 
+                      + discretized_ball_pos_velo_polar(1)*num_ball_polar_radius*num_robot 
+                      + discretized_EE_euler(0)*num_robot 
+                      + discretized_EE_euler(1);
+
+        return state_index;
+    }
+
+    double getReward(Eigen::Vector4d &discretized_ball_pos_velo_polar, Eigen::Vector2d &discretized_EE_euler, int ball_range)
     {
         double reward;
         int encodedBallPosAngle = discretized_ball_pos_velo_polar(0);
         int encodedBallPosDis = discretized_ball_pos_velo_polar(1);
+        int encodedVeloAngle = discretized_ball_pos_velo_polar(2);
+        double VeloRadius = discretized_ball_pos_velo_polar(3);
         int encodedEEx = discretized_EE_euler(0);
         int encodedEEy = discretized_EE_euler(1);
 
+        if (encodedBallPosDis == 0 && VeloRadius<0.05) reward = 100;
+        else if (encodedBallPosDis == 0 && VeloRadius>0.05) reward = 1;
+        else if (encodedBallPosDis == 1) reward = -1;
+        else if (encodedBallPosDis == 2) reward = -2;
+        else if (encodedBallPosDis == 3) reward = -4;
+        else reward = -10;
+
         return reward;
     }
+
+    int chooseAction(int state, const Eigen::MatrixXd &Q, double epsilon) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(0, 1);
+        std::uniform_int_distribution<> actionDis(0, numActions - 1);
+
+        if (dis(gen) > epsilon) {
+            // Choose the best action for the current state
+            Eigen::MatrixXd::Index maxIndex;
+            Q.row(state).maxCoeff(&maxIndex);
+            return static_cast<int>(maxIndex);
+        } else {
+            // Choose a random action
+            return actionDis(gen);
+        }
+    }
+
+    void action2plateAngle(int action){
+
+        if (action == 0) 
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+        else if (action == 1){
+            plate_angle(0)+= ;
+            plate_angle(1)+=
+        }
+    }
+
+    void updateQ(Eigen::MatrixXd &Q, int state, int action, double reward, int nextState) {
+        double maxNextQ = Q.row(nextState).maxCoeff(); // Max Q-value for the next state
+        Q(state, action) += alpha * (reward + gamma * maxNextQ - Q(state, action));
+    }
+
+
 
     Eigen::Vector2d encodeBallStateGrid(Eigen::Vector4d &x_ball, int size, double minCoord, double maxCoord)
     {
@@ -50,13 +169,15 @@ namespace state_action_factory
 
         // Velocity part
         Eigen::Vector2d polar_vel;
-        polar_vel<<sqrt(std::pow(x_ball(1),2) + std::pow(x_ball(3),2)), atan2(x_ball(3), x_ball(1));
+        double radius = sqrt(std::pow(x_ball(1),2) + std::pow(x_ball(3),2));
+        double theta = atan2(x_ball(3), x_ball(1));
+        polar_vel<<radius, theta;
         normalizedTheta = polar_vel(1) < 0 ? (2 * M_PI + polar_vel(1)) : polar_vel(1);
 
         int encodedVeloAngle = static_cast<int>((normalizedTheta / (2 * M_PI)) * angle_size); // share same angle size wiz pos
 
         Eigen::Vector4d encodedPosVelo;
-        encodedPosVelo<<encodedPosAngle, encodedPosDis, encodedVeloAngle, 0;
+        encodedPosVelo<<encodedPosAngle, encodedPosDis, encodedVeloAngle, radius;
         return encodedPosVelo;
     }
 
