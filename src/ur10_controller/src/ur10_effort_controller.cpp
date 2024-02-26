@@ -255,7 +255,7 @@ namespace tum_ics_ur_robot_lli
             q_learning::new_action = true;
 
             // TODO: discretize ball position
-            Eigen::Vector2d discretized_ball_pos = q_learning::encodeBallStateGrid(x_ball, q_learning::num_ball_grid, -q_learning::ball_range, q_learning::ball_range);
+            // Eigen::Vector2d discretized_ball_pos = q_learning::encodeBallStateGrid(x_ball, q_learning::num_ball_grid, -q_learning::ball_range, q_learning::ball_range);
             //ROS_INFO_STREAM("discretized_ball_pos \n"<<discretized_ball_pos);
             
             // TODO: discretize end effector rotation
@@ -268,7 +268,6 @@ namespace tum_ics_ur_robot_lli
             // Output: encodedPosAngle, encodedPosDis, encodedVeloAngle, 0
             // ROS_INFO_STREAM("discretized_ball_pos_velo_polar \n"<<discretized_ball_pos_velo_polar);
 
-            // TODO: construnct Q table by only ball pos + robot orientation
             
             
             if(q_learning::Q_init)
@@ -297,8 +296,9 @@ namespace tum_ics_ur_robot_lli
             else q_learning::currentState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
                                                     q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, q_learning::num_robot);
 
+            // epsilon greedy policy
             q_learning::action = q_learning::chooseAction(q_learning::currentState, q_learning::Q, q_learning::epsilon); // a(t)
-            q_learning::action2plateAngle(q_learning::action);
+            q_learning::delta_robot_rotate = q_learning::action2plateAngle(q_learning::action);
 
             // if(q_learning::step>=q_learning::maxSteps || q_learning::done)
             // {
@@ -315,10 +315,8 @@ namespace tum_ics_ur_robot_lli
                 q_learning::epsilon *=0.99;
                 q_learning::episode++;
                 ROS_INFO_STREAM("episode:  "<<q_learning::episode);
-                q_learning::randomEpisodePlate();
-
+                // q_learning::randomEpisodePlate();
             }
-            q_learning::last_plate_angle = q_learning::plate_angle;
         } // learning inner loop
         
 
@@ -332,22 +330,22 @@ namespace tum_ics_ur_robot_lli
         // end effector rotate correspond to action 
         
         // TODO: smoothly change plate_angle
-        if (q_learning::new_action && q_learning::Q_init) 
+        if (q_learning::new_action && q_learning::Q_init) // new action from inner Q learning loop
         {
             // new action from q learning update
-            q_learning::plate_x_delta_onestep = (q_learning::plate_angle(0) - q_learning::last_plate_angle(0))/q_learning::learning_freq;
-            q_learning::plate_y_delta_onestep = q_learning::plate_angle(1) - q_learning::last_plate_angle(1)/q_learning::learning_freq;
+            q_learning::plate_x_delta_onestep = q_learning::delta_robot_rotate(0)/q_learning::learning_freq;
+            q_learning::plate_y_delta_onestep = q_learning::delta_robot_rotate(1)/q_learning::learning_freq;
             q_learning::new_action = false;
         }
-        q_learning::last_plate_angle(0) += q_learning::plate_x_delta_onestep;
-        q_learning::last_plate_angle(1) += q_learning::plate_y_delta_onestep;
+        q_learning::plate_angle(0) += q_learning::plate_x_delta_onestep;
+        q_learning::plate_angle(1) += q_learning::plate_y_delta_onestep;
 
 
         // execute the action by q learning
-        Matrix3d x_goal_r;
-        if (q_learning::Q_init)
-        Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(q_learning::last_plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(q_learning::last_plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
-        else
+
+        // if (q_learning::Q_init)
+        // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(q_learning::last_plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(q_learning::last_plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
+        // else
         Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(q_learning::plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(q_learning::plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
         
         ROS_INFO_STREAM("onestep x y:  "<< q_learning::plate_x_delta_onestep << ","<< q_learning::plate_y_delta_onestep );

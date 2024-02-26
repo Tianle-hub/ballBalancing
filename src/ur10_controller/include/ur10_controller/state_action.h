@@ -11,12 +11,12 @@
 namespace q_learning
 {
     int inner_counter = 0;
-    int learning_freq = 100;
+    int learning_freq = 10;
     double plate_x_delta_onestep = 0;
     double plate_y_delta_onestep = 0;
     // Variables for Q learning
     Eigen::Vector2d plate_angle = Eigen::Vector2d::Zero();
-    Eigen::Vector2d last_plate_angle = Eigen::Vector2d::Zero();
+    // Eigen::Vector2d last_plate_angle = Eigen::Vector2d::Zero();
 
 
     double ball_range = 0.2;
@@ -29,7 +29,7 @@ namespace q_learning
     int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
     int num_action = 9;
     Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(num_state, num_action);
-    
+    Eigen::Vector2d delta_robot_rotate;
     bool new_action = false;
 
 
@@ -117,60 +117,71 @@ namespace q_learning
         }
     }
 
-    void action2plateAngle(int action){
-
+    Eigen::Vector2d action2plateAngle(int action){
+        Eigen::Vector2d delta;
         if (action == 0){
             // stay still
-            plate_angle(0) += 0;
-            plate_angle(1) += 0;
+            delta<<0, 0;
         }
         else if (action == 1){
             // up
-            plate_angle(0) -= unit_robot_rotate;
-            plate_angle(1) += 0;
+            // plate_angle(0) -= unit_robot_rotate;
+            // plate_angle(1) += 0;
+            delta<<-unit_robot_rotate,0;
         }
         else if (action == 2){
             // up right
-            plate_angle(0) -= unit_robot_rotate;
-            plate_angle(1) += unit_robot_rotate;
+            // plate_angle(0) -= unit_robot_rotate;
+            // plate_angle(1) += unit_robot_rotate;
+            delta<<-unit_robot_rotate,unit_robot_rotate;
         }
         else if (action == 3){
             // right
-            plate_angle(0)+= 0;
-            plate_angle(1)+= unit_robot_rotate;
+            // plate_angle(0)+= 0;
+            // plate_angle(1)+= unit_robot_rotate;
+            delta<<0,unit_robot_rotate;
         }
         else if (action == 4){
             // down right
-            plate_angle(0)+= unit_robot_rotate;
-            plate_angle(1)+= unit_robot_rotate;
+            // plate_angle(0)+= unit_robot_rotate;
+            // plate_angle(1)+= unit_robot_rotate;
+            delta<<unit_robot_rotate,unit_robot_rotate;
         }
         else if (action == 5){
             // down 
-            plate_angle(0)+= unit_robot_rotate;
-            plate_angle(1)+= 0;
+            // plate_angle(0)+= unit_robot_rotate;
+            // plate_angle(1)+= 0;
+            delta<<unit_robot_rotate,0;
         }
         else if (action == 6){
             // down left
-            plate_angle(0)+= unit_robot_rotate;
-            plate_angle(1)-= unit_robot_rotate; 
+            // plate_angle(0)+= unit_robot_rotate;
+            // plate_angle(1)-= unit_robot_rotate;
+            delta<<unit_robot_rotate,-unit_robot_rotate;
         }
         else if (action == 7){
             // left 
-            plate_angle(0)+= 0;
-            plate_angle(1)-= unit_robot_rotate;
+            // plate_angle(0)+= 0;
+            // plate_angle(1)-= unit_robot_rotate;
+            delta<<0,-unit_robot_rotate;
         }
         else if (action == 8){
             // up left
-            plate_angle(0)-= unit_robot_rotate;
-            plate_angle(1)-= unit_robot_rotate;
+            // plate_angle(0)-= unit_robot_rotate;
+            // plate_angle(1)-= unit_robot_rotate;
+            delta<<-unit_robot_rotate,-unit_robot_rotate;
         }
+        if (plate_angle(0) >= robot_rotation_range) delta(0) = 0;
+        else if (plate_angle(0) <= -robot_rotation_range) delta(0) = 0;
+        else if (plate_angle(1) >= robot_rotation_range) delta(1) = 0;
+        else if (plate_angle(1) <= -robot_rotation_range) delta(1) = 0;
 
-        if (plate_angle(0) >= robot_rotation_range) plate_angle(0) = robot_rotation_range;
-        else if (plate_angle(0) <= -robot_rotation_range) plate_angle(0) = -robot_rotation_range;
-        else if (plate_angle(1) >= robot_rotation_range) plate_angle(1) = robot_rotation_range;
-        else if (plate_angle(1) <= -robot_rotation_range) plate_angle(1) = -robot_rotation_range;
+        // if (plate_angle(0) >= robot_rotation_range) plate_angle(0) = robot_rotation_range;
+        // else if (plate_angle(0) <= -robot_rotation_range) plate_angle(0) = -robot_rotation_range;
+        // else if (plate_angle(1) >= robot_rotation_range) plate_angle(1) = robot_rotation_range;
+        // else if (plate_angle(1) <= -robot_rotation_range) plate_angle(1) = -robot_rotation_range;
 
-
+    return delta;
     }
 
     void updateQ(Eigen::MatrixXd &Q, int state, int action, double reward, int nextState) {
