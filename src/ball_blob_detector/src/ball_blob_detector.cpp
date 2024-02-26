@@ -217,8 +217,14 @@ std::vector<cv::KeyPoint> BallBlobDetector::processFrame()
 
     // Threshold the HSV image to get only red colors
     cv::Mat redMask1, redMask2, redMask_hsv;
+    // tight values : hue, saturation ,luminance value
     cv::inRange(hsvImage, cv::Scalar(0, 120, 70), cv::Scalar(10, 255, 255), redMask1);
     cv::inRange(hsvImage, cv::Scalar(170, 120, 70), cv::Scalar(180, 255, 255), redMask2);
+
+    // loose values: 
+    // cv::inRange(hsvImage, cv::Scalar(0, 120, 60), cv::Scalar(10, 255, 255), redMask1);
+    // cv::inRange(hsvImage, cv::Scalar(170, 120, 60), cv::Scalar(180, 255, 255), redMask2);
+
 
     cv::Mat maskYellowOrange;
     // Adjust the hue values to target yellow to orange.
