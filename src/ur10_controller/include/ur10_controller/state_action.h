@@ -6,35 +6,38 @@
 #include <eigen3/Eigen/Dense>
 #include <cmath>
 
-// Variables for Q learning
-Vector2d plate_angle::Zero;
-double ball_range = 0.2;
-double robot_rotation_range = 0.1;
-int num_ball_grid = 20;
-int num_ball_polar_theta = 15;
-int num_ball_polar_radius = 5;
-int num_robot = 10;
-int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
-int num_action = 9;
-Eigen::MatrixXd Q(num_state, num_action)::Zero();
 
-bool Q_init = false;
-const int numEpisodes = 1000; // Total number of episodes to run
-const int maxSteps = 100; // Maximum steps per episode
-int episode = 0;
-int step = 0;
-int currentState;
-int nextState;
-int action;
-bool done;
-double reward = 0;
-
-const double alpha = 0.1; // Learning rate
-const double gamma = 0.99; // Discount factor
-double epsilon = 0.1; // Epsilon for epsilon-greedy policy
 
 namespace q_learning
 {
+    // Variables for Q learning
+    Eigen::Vector2d plate_angle = Eigen::Vector2d::Zero();
+
+    double ball_range = 0.2;
+    double robot_rotation_range = 0.05;
+    int num_ball_grid = 20;
+    int num_ball_polar_theta = 8;
+    int num_ball_polar_radius = 5;
+    int num_robot = 10;
+    double unit_robot_rotate = robot_rotation_range/double(num_robot);
+    int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
+    int num_action = 9;
+    Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(num_state, num_action);
+
+    bool Q_init = false;
+    const int numEpisodes = 1000; // Total number of episodes to run
+    const int maxSteps = 100; // Maximum steps per episode
+    int episode = 0;
+    int step = 0;
+    int currentState;
+    int nextState;
+    int action;
+    bool done;
+    double reward = 0;
+
+    const double alpha = 0.1; // Learning rate
+    const double gamma = 0.99; // Discount factor
+    double epsilon = 0.2; // Epsilon for epsilon-greedy policy
 
 
     Eigen::Vector2d encodeBallStateGrid(Eigen::Vector4d &x_ball, int size, double minCoord, double maxCoord);
@@ -67,11 +70,14 @@ namespace q_learning
         int encodedEEx = discretized_EE_euler(0);
         int encodedEEy = discretized_EE_euler(1);
 
-        if (encodedBallPosDis == 0 && VeloRadius<0.05) reward = 100;
+        if (encodedBallPosDis == 0 && VeloRadius<0.05){
+            reward = 100;
+            done = true;
+        }
         else if (encodedBallPosDis == 0 && VeloRadius>0.05) reward = 1;
         else if (encodedBallPosDis == 1) reward = -1;
         else if (encodedBallPosDis == 2) reward = -2;
-        else if (encodedBallPosDis == 3) reward = -4;
+        else if (encodedBallPosDis == 3) reward = -4;  // check whether not exceed
         else reward = -10;
 
         return reward;
@@ -81,7 +87,7 @@ namespace q_learning
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<> dis(0, 1);
-        std::uniform_int_distribution<> actionDis(0, numActions - 1);
+        std::uniform_int_distribution<> actionDis(0, num_action - 1);
 
         if (dis(gen) > epsilon) {
             // Choose the best action for the current state
@@ -96,50 +102,58 @@ namespace q_learning
 
     void action2plateAngle(int action){
 
-        if (action == 0) 
-        else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+        if (action == 0){
+            // stay still
+            plate_angle(0) += 0;
+            plate_angle(1) += 0;
         }
         else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+            // up
+            plate_angle(0) -= unit_robot_rotate;
+            plate_angle(1) += 0;
         }
-        else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+        else if (action == 2){
+            // up right
+            plate_angle(0) -= unit_robot_rotate;
+            plate_angle(1) += unit_robot_rotate;
         }
-        else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+        else if (action == 3){
+            // right
+            plate_angle(0)+= 0;
+            plate_angle(1)+= unit_robot_rotate;
         }
-        else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+        else if (action == 4){
+            // down right
+            plate_angle(0)+= unit_robot_rotate;
+            plate_angle(1)+= unit_robot_rotate;
         }
-        else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+        else if (action == 5){
+            // down 
+            plate_angle(0)+= unit_robot_rotate;
+            plate_angle(1)+= 0;
         }
-        else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+        else if (action == 6){
+            // down left
+            plate_angle(0)+= unit_robot_rotate;
+            plate_angle(1)-= unit_robot_rotate; 
         }
-        else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+        else if (action == 7){
+            // left 
+            plate_angle(0)+= 0;
+            plate_angle(1)-= unit_robot_rotate;
         }
-        else if (action == 1){
-            plate_angle(0)+= ;
-            plate_angle(1)+=
+        else if (action == 8){
+            // up left
+            plate_angle(0)-= unit_robot_rotate;
+            plate_angle(1)-= unit_robot_rotate;
         }
+
     }
 
     void updateQ(Eigen::MatrixXd &Q, int state, int action, double reward, int nextState) {
         double maxNextQ = Q.row(nextState).maxCoeff(); // Max Q-value for the next state
         Q(state, action) += alpha * (reward + gamma * maxNextQ - Q(state, action));
     }
-
 
 
     Eigen::Vector2d encodeBallStateGrid(Eigen::Vector4d &x_ball, int size, double minCoord, double maxCoord)
