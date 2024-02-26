@@ -246,56 +246,81 @@ namespace tum_ics_ur_robot_lli
         // double pitch = EE_pos_r(1); // Axis 1: Rotation around the Y-axis (pitch) 
         // double roll = EE_pos_r(2);  //Axis 0: Rotation around the X-axis (roll)
 
-        // TODO: discretize ball position
-        Eigen::Vector2d discretized_ball_pos = q_learning::encodeBallStateGrid(x_ball, q_learning::num_ball_grid, -q_learning::ball_range, q_learning::ball_range);
-        ROS_INFO_STREAM("discretized_ball_pos \n"<<discretized_ball_pos);
-        // TODO: discretize end effector rotation
-        Eigen::Vector2d discretized_EE_euler = q_learning::encodeEndeffectorState(EE_pos_r_xy, q_learning::num_robot, -q_learning::robot_rotation_range, q_learning::robot_rotation_range);
-        // Output: discretized_EE_euler_x, discretized_EE_euler_y
-        ROS_INFO_STREAM("discretized_EE_euler \n"<<discretized_EE_euler);
+        q_learning::inner_counter++;
+        if (q_learning::inner_counter == q_learning::learning_freq*100) q_learning::inner_counter = 0;
 
-        //x_ball, int angle_size, int dis_size, int minCoord, int maxCoord
-        Eigen::Vector4d discretized_ball_pos_velo_polar = q_learning::encodeBallPosVeloPolar(x_ball, q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, 0, q_learning::ball_range);
-        // Output: encodedPosAngle, encodedPosDis, encodedVeloAngle, 0
-        ROS_INFO_STREAM("discretized_ball_pos_velo_polar \n"<<discretized_ball_pos_velo_polar);
+        if (q_learning::inner_counter % q_learning::learning_freq){
+            
+            ROS_INFO("q learning step");
+            q_learning::new_action = true;
 
-        // TODO: construnct Q table by only ball pos + robot orientation
-        if(q_learning::Q_init)
-        {
-            q_learning::step++;
-            // s(t+1)
-            q_learning::nextState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
-                                            q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, q_learning::num_robot);
-            if(q_learning::episode<=q_learning::numEpisodes)
+            // TODO: discretize ball position
+            Eigen::Vector2d discretized_ball_pos = q_learning::encodeBallStateGrid(x_ball, q_learning::num_ball_grid, -q_learning::ball_range, q_learning::ball_range);
+            //ROS_INFO_STREAM("discretized_ball_pos \n"<<discretized_ball_pos);
+            
+            // TODO: discretize end effector rotation
+            Eigen::Vector2d discretized_EE_euler = q_learning::encodeEndeffectorState(EE_pos_r_xy, q_learning::num_robot, -q_learning::robot_rotation_range, q_learning::robot_rotation_range);
+            // Output: discretized_EE_euler_x, discretized_EE_euler_y
+            // ROS_INFO_STREAM("discretized_EE_euler \n"<<discretized_EE_euler);
+
+            //x_ball, int angle_size, int dis_size, int minCoord, int maxCoord
+            Eigen::Vector4d discretized_ball_pos_velo_polar = q_learning::encodeBallPosVeloPolar(x_ball, q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, 0, q_learning::ball_range);
+            // Output: encodedPosAngle, encodedPosDis, encodedVeloAngle, 0
+            // ROS_INFO_STREAM("discretized_ball_pos_velo_polar \n"<<discretized_ball_pos_velo_polar);
+
+            // TODO: construnct Q table by only ball pos + robot orientation
+            
+            
+            if(q_learning::Q_init)
             {
-              q_learning::reward = q_learning::getReward(discretized_ball_pos_velo_polar, discretized_EE_euler, q_learning::ball_range);
-              q_learning::updateQ(q_learning::Q, q_learning::currentState, q_learning::action, q_learning::reward, q_learning::nextState);
-              ROS_INFO_STREAM("reward:  "<<q_learning::reward);
-            }        
-        }
+                q_learning::step++;
+                // ROS_INFO_STREAM("step:  "<<q_learning::step);
+                // s(t+1)
+                q_learning::nextState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
+                                                q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, q_learning::num_robot);
+                if(q_learning::episode<=q_learning::numEpisodes)
+                {
+                  q_learning::reward = q_learning::getReward(discretized_ball_pos_velo_polar, discretized_EE_euler, q_learning::ball_range);
+                  q_learning::updateQ(q_learning::Q, q_learning::currentState, q_learning::action, q_learning::reward, q_learning::nextState);
+                  // ROS_INFO_STREAM("reward:  "<<q_learning::reward);
+                }        
+            }
+            
+
+
+            // TODO: get state index
+            // encodedPosAngle: num_ball_polar_theta, encodedPosDis: num_ball_polar_radius
+            // discretized_EE_euler_x: num_robot, discretized_EE_euler_y: num_robot
+            
+            // s(t)
+            if(q_learning::Q_init) q_learning::currentState = q_learning::nextState;
+            else q_learning::currentState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
+                                                    q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, q_learning::num_robot);
+
+            q_learning::action = q_learning::chooseAction(q_learning::currentState, q_learning::Q, q_learning::epsilon); // a(t)
+            q_learning::action2plateAngle(q_learning::action);
+
+            // if(q_learning::step>=q_learning::maxSteps || q_learning::done)
+            // {
+            //     q_learning::step = 0;
+            //     q_learning::done = false;
+            //     q_learning::epsilon *=0.99;
+            //     q_learning::episode++;
+            // }
+
+            if(q_learning::step>=q_learning::maxSteps)
+            {
+                q_learning::step = 0;
+                // q_learning::done = false;
+                q_learning::epsilon *=0.99;
+                q_learning::episode++;
+                ROS_INFO_STREAM("episode:  "<<q_learning::episode);
+                q_learning::randomEpisodePlate();
+
+            }
+            q_learning::last_plate_angle = q_learning::plate_angle;
+        } // learning inner loop
         
-
-
-        // TODO: get state index
-        // encodedPosAngle: num_ball_polar_theta, encodedPosDis: num_ball_polar_radius
-        // discretized_EE_euler_x: num_robot, discretized_EE_euler_y: num_robot
-        
-        // s(t)
-        if(q_learning::Q_init) q_learning::currentState = q_learning::nextState;
-        else q_learning::currentState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
-                                                 q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, q_learning::num_robot);
-
-        q_learning::action = q_learning::chooseAction(q_learning::currentState, q_learning::Q, q_learning::epsilon); // a(t)
-        q_learning::action2plateAngle(q_learning::action);
-
-        if(q_learning::step>=q_learning::maxSteps || q_learning::done)
-        {
-            q_learning::step = 0;
-            q_learning::done = false;
-            q_learning::epsilon *=0.99;
-            q_learning::episode++;
-        }
-
 
 
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
@@ -305,10 +330,28 @@ namespace tum_ics_ur_robot_lli
         // plate_angle(1) = 0.1*sin(0.2*(time.tD()-20.));   // rotate X axis, change y
         // ROS_INFO_STREAM("plate_angle"<<plate_angle);
         // end effector rotate correspond to action 
+        
+        // TODO: smoothly change plate_angle
+        if (q_learning::new_action && q_learning::Q_init) 
+        {
+            // new action from q learning update
+            q_learning::plate_x_delta_onestep = (q_learning::plate_angle(0) - q_learning::last_plate_angle(0))/q_learning::learning_freq;
+            q_learning::plate_y_delta_onestep = q_learning::plate_angle(1) - q_learning::last_plate_angle(1)/q_learning::learning_freq;
+            q_learning::new_action = false;
+        }
+        q_learning::last_plate_angle(0) += q_learning::plate_x_delta_onestep;
+        q_learning::last_plate_angle(1) += q_learning::plate_y_delta_onestep;
+
 
         // execute the action by q learning
+        Matrix3d x_goal_r;
+        if (q_learning::Q_init)
+        Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(q_learning::last_plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(q_learning::last_plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
+        else
         Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(q_learning::plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(q_learning::plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
-
+        
+        ROS_INFO_STREAM("onestep x y:  "<< q_learning::plate_x_delta_onestep << ","<< q_learning::plate_y_delta_onestep );
+        ROS_INFO_STREAM("Plate Command:\n"<<q_learning::plate_angle);
         Vector3d x_goal_t = working_position_;
         // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;  //move along z-axis?
 

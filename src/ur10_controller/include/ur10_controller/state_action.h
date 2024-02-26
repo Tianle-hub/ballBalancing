@@ -10,19 +10,28 @@
 
 namespace q_learning
 {
+    int inner_counter = 0;
+    int learning_freq = 100;
+    double plate_x_delta_onestep = 0;
+    double plate_y_delta_onestep = 0;
     // Variables for Q learning
     Eigen::Vector2d plate_angle = Eigen::Vector2d::Zero();
+    Eigen::Vector2d last_plate_angle = Eigen::Vector2d::Zero();
+
 
     double ball_range = 0.2;
-    double robot_rotation_range = 0.05;
+    double robot_rotation_range = 0.06;  // rotation maximum angle in radian
     int num_ball_grid = 20;
     int num_ball_polar_theta = 8;
     int num_ball_polar_radius = 5;
-    int num_robot = 10;
+    int num_robot = 8;
     double unit_robot_rotate = robot_rotation_range/double(num_robot);
     int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
     int num_action = 9;
     Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(num_state, num_action);
+    
+    bool new_action = false;
+
 
     bool Q_init = false;
     const int numEpisodes = 1000; // Total number of episodes to run
@@ -46,6 +55,14 @@ namespace q_learning
     int discretizeCoordinate(double coordinate, int size, double minCoord, double maxCoord);
     
 
+    void randomEpisodePlate()
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(-robot_rotation_range, robot_rotation_range);
+        plate_angle << dis(gen), dis(gen);
+        ROS_INFO_STREAM("Init plate_angle \n"<<plate_angle);
+    }
 
 
     int getState(Eigen::Vector4d &discretized_ball_pos_velo_polar,
@@ -70,11 +87,11 @@ namespace q_learning
         int encodedEEx = discretized_EE_euler(0);
         int encodedEEy = discretized_EE_euler(1);
 
-        if (encodedBallPosDis == 0 && VeloRadius<0.01){
-            reward = 100;
+        if (encodedBallPosDis == 0 && VeloRadius<0.03){
+            reward = 100; 
             done = true;
         }
-        else if (encodedBallPosDis == 0 && VeloRadius>0.01) reward = 1;
+        else if (encodedBallPosDis == 0 && VeloRadius>0.03) reward = 1;
         else if (encodedBallPosDis == 1) reward = -1;
         else if (encodedBallPosDis == 2) reward = -2;
         else if (encodedBallPosDis == 3) reward = -4;  // check whether not exceed
@@ -147,6 +164,12 @@ namespace q_learning
             plate_angle(0)-= unit_robot_rotate;
             plate_angle(1)-= unit_robot_rotate;
         }
+
+        if (plate_angle(0) >= robot_rotation_range) plate_angle(0) = robot_rotation_range;
+        else if (plate_angle(0) <= -robot_rotation_range) plate_angle(0) = -robot_rotation_range;
+        else if (plate_angle(1) >= robot_rotation_range) plate_angle(1) = robot_rotation_range;
+        else if (plate_angle(1) <= -robot_rotation_range) plate_angle(1) = -robot_rotation_range;
+
 
     }
 
