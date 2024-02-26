@@ -37,7 +37,7 @@ namespace q_learning
 
     const double alpha = 0.1; // Learning rate
     const double gamma = 0.99; // Discount factor
-    double epsilon = 0.2; // Epsilon for epsilon-greedy policy
+    double epsilon = 0.3; // Epsilon for epsilon-greedy policy
 
 
     Eigen::Vector2d encodeBallStateGrid(Eigen::Vector4d &x_ball, int size, double minCoord, double maxCoord);

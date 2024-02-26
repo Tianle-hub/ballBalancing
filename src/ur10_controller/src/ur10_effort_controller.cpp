@@ -270,6 +270,7 @@ namespace tum_ics_ur_robot_lli
             {
               q_learning::reward = q_learning::getReward(discretized_ball_pos_velo_polar, discretized_EE_euler, q_learning::ball_range);
               q_learning::updateQ(q_learning::Q, q_learning::currentState, q_learning::action, q_learning::reward, q_learning::nextState);
+              ROS_INFO_STREAM("reward:  "<<q_learning::reward);
             }        
         }
         
@@ -293,6 +294,7 @@ namespace tum_ics_ur_robot_lli
             q_learning::epsilon *=0.99;
             q_learning::episode++;
         }
+
 
 
         // Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(u_ball_d(0), Vector3d::UnitY()) * Eigen::AngleAxisd(-u_ball_d(1), Vector3d::UnitX())).toRotationMatrix();
