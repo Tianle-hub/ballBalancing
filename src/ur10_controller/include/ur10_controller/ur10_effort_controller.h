@@ -34,6 +34,7 @@ namespace tum_ics_ur_robot_lli
       ros::NodeHandle nh_;
       ros::Publisher control_data_pub_;
       ros::Publisher Reward_data_pub_;
+      ros::Publisher Explore_data_pub_;
       tf::TransformBroadcaster dh_br;
 
       // joint space controller
@@ -61,6 +62,7 @@ namespace tum_ics_ur_robot_lli
       Vector6d tau_prev_;
       
       std_msgs::Float64 return_msg;
+      std_msgs::Float64 explore_msg;
       // std::random_device rd;
       // std::mt19937 gen(rd());
       // // Define the distribution to be between 0.0 and 1.0

@@ -11,7 +11,7 @@
 namespace q_learning
 {
     int inner_counter = 0;
-    int learning_freq = 10;
+    int learning_freq = 15;
     double plate_x_delta_onestep = 0;
     double plate_y_delta_onestep = 0;
     // Variables for Q learning
@@ -21,23 +21,24 @@ namespace q_learning
 
 
     double ball_range = 0.2;
-    double robot_rotation_range = 0.06;  // rotation maximum angle in radian
+    double robot_rotation_range = 0.08;  // rotation maximum angle in radian
     int num_ball_grid = 20;
     int num_ball_polar_theta = 8;
-    int num_ball_polar_radius = 8;
-    int num_robot = 4;
+    int num_ball_polar_radius = 5;
+    int num_robot = 5;
     double unit_robot_rotate = robot_rotation_range/double(num_robot);
     int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
     int num_action = 9;
-    Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(num_state, num_action);
+    // Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(num_state, num_action);
+    Eigen::MatrixXd Q = Eigen::MatrixXd::Random(num_state, num_action);
     Eigen::Vector2d delta_robot_rotate;
     bool new_action = false;
     bool plate_x_limit = false;
     bool plate_y_limit = false;
 
     bool Q_init = false;
-    const int numEpisodes = 1000; // Total number of episodes to run
-    const int maxSteps = 100; // Maximum steps per episode
+    const int numEpisodes = 2000; // Total number of episodes to run
+    const int maxSteps = 200; // Maximum steps per episode
     int episode = 0;
     int step = 0;
     int currentState;
@@ -50,7 +51,9 @@ namespace q_learning
 
     const double alpha = 0.1; // Learning rate
     const double gamma = 0.99; // Discount factor
-    double epsilon = 0.3; // Epsilon for epsilon-greedy policy
+    double epsilon = 0.5; // Epsilon for epsilon-greedy policy
+
+    int debug_addup = 0;
 
 
     Eigen::Vector2d encodeBallStateGrid(Eigen::Vector4d &x_ball, int size, double minCoord, double maxCoord);
@@ -64,10 +67,12 @@ namespace q_learning
         Eigen::Vector2d previous_plate_angle = plate_angle;
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis(-robot_rotation_range*0.5, robot_rotation_range*0.5);
+        std::uniform_real_distribution<> dis(-robot_rotation_range*0.9, robot_rotation_range*0.9);
         Eigen::Vector2d current_plate_angle;
         current_plate_angle<< dis(gen), dis(gen);
+        
         ROS_INFO_STREAM("Init plate_angle \n"<<plate_angle);
+        ROS_INFO_STREAM("current_plate_angle \n"<<current_plate_angle);
         Eigen::Vector2d delta_random_plate;
         delta_random_plate<< current_plate_angle(0) - previous_plate_angle(0), current_plate_angle(1) - previous_plate_angle(1);
         return delta_random_plate;
@@ -110,12 +115,13 @@ namespace q_learning
             && (encodedEEy<=num_robot/2+1 || encodedEEy>=num_robot/2-1) ){
             reward = 100; 
             done = true;
+            std::cout<<"High Reward for done"<<std::endl;
         }
         else if (encodedBallPosDis == 0) reward = 1;
         else if (encodedBallPosDis == 1) reward = -1;
-        else if (encodedBallPosDis == 2) reward = -2;
-        else if (encodedBallPosDis == 3) reward = -4;  // check whether not exceed
-        else if (encodedBallPosDis == 4) reward = -8;  // check whether not exceed
+        else if (encodedBallPosDis == 2) reward = -5;
+        else if (encodedBallPosDis == 3) reward = -10;  // check whether not exceed
+        else if (encodedBallPosDis == 4) reward = -50;  // check whether not exceed
         else reward = -10;
 
         return reward;
