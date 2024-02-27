@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/Point.h>
 #include "ball_controller/PosVel2D.h"
 #include <ball_controller/kalman_filter.h>
 #include <ball_controller/ball_model.h>
@@ -36,6 +37,7 @@ namespace BallControl
       Eigen::Vector4d x_; // px vx py vy
       Eigen::Vector4d x_prev_;
       Eigen::Vector2d u_d_;
+      Eigen::Vector2d x_d_;
 
       Eigen::Matrix<double,2,4> K_;
 
@@ -51,6 +53,7 @@ namespace BallControl
       ros::Publisher angel_plate_pb_;
 
       ros::Subscriber camera_sub_;
+      ros::Subscriber position_desired_sub_;
 
       tf::TransformBroadcaster br_;
 
@@ -83,7 +86,9 @@ namespace BallControl
     private:
       void pubBallTF();
 
-      void ball_pos_vel_Callback(const ball_controller::PosVel2D);
+      void ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel);
+
+      void x_d_Callback(const geometry_msgs::Point x_d);
 
       bool initK();
 
