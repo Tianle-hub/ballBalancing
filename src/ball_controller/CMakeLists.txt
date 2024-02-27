@@ -83,7 +83,7 @@ generate_messages(
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
-################################################
+##########################src/ball_controller/launch/kalman_filter.launch######################
 
 ## To declare and build dynamic reconfigure parameters within this
 ## package, follow these steps:
@@ -135,6 +135,8 @@ add_library(my_ball_controller
   src/ball_controller.cpp
   src/kalman_filter.cpp
   src/ball_model.cpp
+  src/kalman_filter_cv.cpp
+  src/kalman_filter_ca.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -147,8 +149,9 @@ add_library(my_ball_controller
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(ball_controller_test src/applications/ball_controller_test.cpp)
 add_executable(kalman_filter_test src/applications/kalman_filter_test.cpp)
+add_executable(kalman_filter_cv_test src/applications/kalman_filter_cv_test.cpp)
+add_executable(kalman_filter_ca_test src/applications/kalman_filter_ca_test.cpp)
 add_executable(kalman_filter_test_with_camera src/applications/kalman_filter_test_with_camera.cpp)
-
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -165,6 +168,14 @@ add_dependencies(kalman_filter_test
                 ${std_msgs_EXPORTED_TARGETS} 
                 ${catkin_EXPORTED_TARGETS}
                 ${geometry_msgs_EXPORTED_TARGETS})
+add_dependencies(kalman_filter_cv_test 
+                ${std_msgs_EXPORTED_TARGETS} 
+                ${catkin_EXPORTED_TARGETS}
+                ${geometry_msgs_EXPORTED_TARGETS})
+add_dependencies(kalman_filter_ca_test 
+                ${std_msgs_EXPORTED_TARGETS} 
+                ${catkin_EXPORTED_TARGETS}
+                ${geometry_msgs_EXPORTED_TARGETS})
 add_dependencies(kalman_filter_test_with_camera 
                 ${std_msgs_EXPORTED_TARGETS} 
                 ${catkin_EXPORTED_TARGETS}
@@ -177,6 +188,16 @@ target_link_libraries(ball_controller_test
   ${roscpp_LIBRARIES}
 )
 target_link_libraries(kalman_filter_test
+  my_ball_controller
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+)
+target_link_libraries(kalman_filter_cv_test
+  my_ball_controller
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+)
+target_link_libraries(kalman_filter_ca_test
   my_ball_controller
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}

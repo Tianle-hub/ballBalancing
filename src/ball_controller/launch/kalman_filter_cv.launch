@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node name="kalman_filter_cv" pkg="ball_controller" type="kalman_filter_cv_test" output="screen">
+
+    <rosparam file="$(find ball_controller)/configs/kalman_filter_cv.yaml" command="load" />
+    
+  </node>
+
+</launch>

@@ -29,7 +29,12 @@ namespace BallControl
       BallType ballType_;
       ControllerState controllerState_;
 
+      Eigen::Matrix2d kp_;
+      Eigen::Matrix2d kd_;
+      Eigen::Matrix2d ki_;
+
       Eigen::Vector4d x_; // px vx py vy
+      Eigen::Vector4d x_prev_;
       Eigen::Vector2d u_d_;
 
       Eigen::Matrix<double,2,4> K_;
@@ -58,6 +63,8 @@ namespace BallControl
 
       int unmeasured_frames_;
 
+      int pid_fre_factor_;
+
     public:
       BallController();
 
@@ -81,9 +88,12 @@ namespace BallControl
       bool initK();
 
       void pubState();
+
       void pubModelState();
 
       void pubPlateAngel(const Eigen::Vector2d &u);
+
+      Eigen::Vector2d pid();
 
 
   };
