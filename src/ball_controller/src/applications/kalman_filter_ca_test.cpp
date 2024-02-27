@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 
     ros::Publisher position_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_position", 1);
     ros::Publisher velocity_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_velocity", 1);
-    // ros::Publisher acceleration_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration", 1);
+    ros::Publisher acceleration_pb = nh.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration", 1);
 
     ros::Publisher true_position_pb = nh.advertise<geometry_msgs::Vector3Stamped>("true_ball_position", 1);
     ros::Publisher true_velocity_pb = nh.advertise<geometry_msgs::Vector3Stamped>("true_ball_velocity", 1);
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
     geometry_msgs::Vector3Stamped ball_position;
     geometry_msgs::Vector3Stamped ball_velocity;
-    // geometry_msgs::Vector3Stamped ball_acceleration;
+    geometry_msgs::Vector3Stamped ball_acceleration;
 
     geometry_msgs::Vector3Stamped true_ball_position;
     geometry_msgs::Vector3Stamped true_ball_velocity;
@@ -39,7 +39,8 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         // Eigen::Vector2d zx(0.5 + 0.5 * 9.81 * t * t, 0.1 + 0.5 * 2.0 * t * t); 
-        Eigen::Vector2d zx(0.5 + 0.5 * 9.81 * sin(t), 0.1 + 0.5 * 2.0 * cos(t));
+        double f = 1;
+        Eigen::Vector2d zx(0.5 + 0.5 * 9.81 * sin(f*t), 0.1 + 0.5 * 2.0 * cos(f*t));
 
         true_ball_position.header.stamp = ros::Time::now();
         true_ball_velocity.header.stamp = ros::Time::now();
@@ -47,8 +48,8 @@ int main(int argc, char **argv)
         true_ball_position.vector.x = zx(0);
         true_ball_position.vector.y = zx(1);
 
-        true_ball_velocity.vector.x = 0.5 * 9.81 * cos(t);
-        true_ball_velocity.vector.y = - 0.5 * 2.0 * sin(t);
+        true_ball_velocity.vector.x = 0.5 * 9.81 * f *cos(f*t);
+        true_ball_velocity.vector.y = - 0.5 * 2.0 * f * sin(f*t);
 
         true_position_pb.publish(true_ball_position);
         true_velocity_pb.publish(true_ball_velocity);
@@ -82,33 +83,33 @@ int main(int argc, char **argv)
         
         meas_position_pb.publish(meas_ball_position);
 
-        Eigen::Vector2d za(-0.5 * 9.81 * sin(t), - 0.5 * 2.0 * cos(t)); 
+        Eigen::Vector2d za(-0.5 * 9.81 * f * f * sin(f * t), - 0.5 * 2.0 * f * f * cos(f * t)); 
         za(0) += 0.01 * ((double) rand() / (RAND_MAX) - 0.5);
         za(1) += 0.01 * ((double) rand() / (RAND_MAX) - 0.5);
 
-        // kalman_filter_ca.updateAcc(za);
+        kalman_filter_ca.updateAcc(za);
 
-        auto x = kalman_filter_ca.getPosVel();
+        auto x = kalman_filter_ca.getState();
 
         ROS_INFO_STREAM("t: \n" << t);
         ROS_INFO_STREAM("x: \n" << x.transpose());
 
         ball_position.header.stamp = ros::Time::now();
         ball_velocity.header.stamp = ros::Time::now();
-        // ball_acceleration.header.stamp = ros::Time::now();
+        ball_acceleration.header.stamp = ros::Time::now();
 
         ball_position.vector.x = x(0);
-        ball_position.vector.y = x(2);
+        ball_position.vector.y = x(3);
 
         ball_velocity.vector.x = x(1);
-        ball_velocity.vector.y = x(3);
+        ball_velocity.vector.y = x(4);
 
-        // ball_acceleration.vector.x = x(2);
-        // ball_acceleration.vector.y = x(6);
+        ball_acceleration.vector.x = za(0);
+        ball_acceleration.vector.y = za(1);
 
         position_pb.publish(ball_position);
         velocity_pb.publish(ball_velocity);
-        // acceleration_pb.publish(ball_acceleration);
+        acceleration_pb.publish(ball_acceleration);
 
 
         t += 0.002;

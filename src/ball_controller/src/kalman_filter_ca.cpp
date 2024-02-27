@@ -193,7 +193,7 @@ namespace BallControl
       return false;
     } else
     {
-      Kx_ = P_ * Hx_.transpose() * (Hx_ * P_ * Hx_.transpose() + Rx_.transpose()).inverse();
+      Kx_ = P_ * Hx_.transpose() * (Hx_ * P_ * Hx_.transpose() + Rx_).inverse();
       x_ = (I_ - Kx_ * Hx_) * x_ + Kx_ * zx;
       P_ = (I_ - Kx_ * Hx_) * P_;
       return true;
@@ -208,7 +208,7 @@ namespace BallControl
       return false;
     } else
     {
-      Ka_ = P_ * Ha_.transpose() * (Ha_ * P_ * Ha_.transpose() + Ra_.transpose()).inverse();
+      Ka_ = P_ * Ha_.transpose() * (Ha_ * P_ * Ha_.transpose() + Ra_).inverse();
       x_ = (I_ - Ka_ * Ha_) * x_ + Ka_ * za;
       P_ = (I_ - Ka_ * Ha_) * P_;
       return true;
