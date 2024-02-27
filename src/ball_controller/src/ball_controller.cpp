@@ -112,7 +112,7 @@ namespace BallControl
         pubPlateAngel(u);
         pubBallTF();
 
-        u_d_ = -0.8*K_ * x_; //0.7
+        u_d_ = -0.9*K_ * x_; //0.7
         
         // u_d_ = pid();
 
