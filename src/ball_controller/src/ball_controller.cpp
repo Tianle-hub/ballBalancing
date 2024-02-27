@@ -97,20 +97,20 @@ namespace BallControl
           case MODEL:
             x_ = ballModel_.updateModel(time, u);
             // ROS_INFO_STREAM("model_x_:" << x_.transpose()); 
-
+            pubModelState();
             break;
           
           case CAMERA:
             KalmanFilter_.predict();
             KalmanFilter_.updateAcc(Eigen::Vector2d(sin(u(0)), sin(u(1))));
             x_ = KalmanFilter_.getPosVel();
+            pubState();
             // ROS_INFO_STREAM("camera_x_:" << x_.transpose());  Eigen::Vector2d::Zero()
             break;
         }
 
         pubPlateAngel(u);
         pubBallTF();
-        pubState();
 
         u_d_ = -1*K_ * x_; //0.7
         return u_d_;
@@ -170,6 +170,30 @@ namespace BallControl
       position_pb_.publish(ball_position);
       velocity_pb_.publish(ball_velocity);
       acceleration_pb_.publish(ball_acceleration);
+  }
+
+  void BallController::pubModelState()
+  {
+      geometry_msgs::Vector3Stamped ball_position;
+      geometry_msgs::Vector3Stamped ball_velocity;
+      // geometry_msgs::Vector3Stamped ball_acceleration;
+
+      ball_position.header.stamp = ros::Time::now();
+      ball_velocity.header.stamp = ros::Time::now();
+      // ball_acceleration.header.stamp = ros::Time::now();
+
+      ball_position.vector.x = x_(0);
+      ball_position.vector.y = x_(2);
+
+      ball_velocity.vector.x = x_(1);
+      ball_velocity.vector.y = x_(3);
+
+      // ball_acceleration.vector.x = x(2);
+      // ball_acceleration.vector.y = x(6);
+
+      position_pb_.publish(ball_position);
+      velocity_pb_.publish(ball_velocity);
+      // acceleration_pb_.publish(ball_acceleration);
   }
 
   void BallController::ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel)

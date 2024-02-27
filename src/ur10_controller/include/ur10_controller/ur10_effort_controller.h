@@ -28,6 +28,7 @@ namespace tum_ics_ur_robot_lli
       JointState q_park_;
 
       Vector6d tau_limits_;
+      Vector6d delta_tau_limits_;
 
       Vector3d working_position_;
 
@@ -55,6 +56,8 @@ namespace tum_ics_ur_robot_lli
 
       BallControl::BallController ball_controller;
 
+      Vector6d tau_prev_;
+
     public:
       UR10EffortControl(double weight = 1.0, const QString &name = "UR10EffortCtrl");
 
@@ -76,6 +79,8 @@ namespace tum_ics_ur_robot_lli
       bool pubDH(const std::vector<Matrix4d> &H_stack, const std::vector<Matrix4d> &Hcm_stack);
 
       Vector6d checkTauLimits(const Vector6d &tau);
+
+      Vector6d checkDeltaTau(const Vector6d &tau);
 
       Matrix3d eulerXYZToRotationMatrix(const Vector3d &euler);
 

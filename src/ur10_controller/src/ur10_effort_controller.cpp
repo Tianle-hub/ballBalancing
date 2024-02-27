@@ -21,13 +21,14 @@ namespace tum_ics_ur_robot_lli
       spline_period_(100.0),
       delta_q_(Vector6d::Zero()),
       delta_qp_(Vector6d::Zero()),
-      tau_limits_(Vector6d::Zero())
+      tau_limits_(Vector6d::Zero()),
+      delta_tau_limits_(Vector6d::Zero())
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      // ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
-      ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
-    
+      ball_controller.init(Vector4d(0.25, 0., 0.25, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
+      // ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
+      delta_tau_limits_ << 2.0, 2.0, 0.5, 1.0, 0.5, 0.5;
     }
 
     UR10EffortControl::~UR10EffortControl()
@@ -234,7 +235,7 @@ namespace tum_ics_ur_robot_lli
       // } 
 
       // Cartesian space
-      if (time.tD() > 20.) //  && time.tD() <= 30.
+      if (time.tD() > 20.) //   && time.tD() <= 30.
       {
         if (!switch_to_carte_)
         { 
@@ -281,7 +282,7 @@ namespace tum_ics_ur_robot_lli
       //     ROS_INFO_STREAM("Switched to cartesian space controller.");
       //     switch_to_carte_ = true;
       //   }
-      //   ROS_INFO_STREAM("changed position");
+      //   // ROS_INFO_STREAM("changed position");
       //   Vector3d x_goal_t = working_position_;
       //   // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;  //move along z-axis?
 
@@ -318,6 +319,7 @@ namespace tum_ics_ur_robot_lli
       // auto stop = std::chrono::high_resolution_clock::now();
       // auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
       // std::cout << duration.count() << std::endl;
+      tau_prev_ = tau;
 
       return tau;
     }
@@ -348,8 +350,6 @@ namespace tum_ics_ur_robot_lli
       model_.updateTheta(state.q, state.qp, js_r.qp, js_r.qpp, Sq);
 
       tau = -Kd_j_ * Sq + Yr * Theta;
-
-      tau = checkTauLimits(tau);
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
@@ -412,11 +412,11 @@ namespace tum_ics_ur_robot_lli
       Vector6d delta_xp = EE_vel - EE_d[1];
 
       // velocity reference in cartesian space
-      Vector6d EE_vel_ref = EE_d[1] - 1.8*Kp_c_ * delta_x;
+      Vector6d EE_vel_ref = EE_d[1] - Kp_c_ * delta_x;
 
       // acceleration reference in cartesian space
       Matrix6d Jee_dot = model_.computeEEJacobainDerivative(state.q, state.qp);
-      Vector6d EE_acc_ref = EE_d[2] - 1.8*Kp_c_ * delta_xp;
+      Vector6d EE_acc_ref = EE_d[2] - Kp_c_ * delta_xp;
 
       Vector6d Sx = EE_vel - EE_vel_ref;
       Vector6d Sq = Jee_inv * Sx;
@@ -439,9 +439,17 @@ namespace tum_ics_ur_robot_lli
 
       // Sq(3) = -Sq(3);
 
-      Vector6d tau = - Kd_c_ * Sq + Yr * Theta; //1.7
+      Vector6d tau = - 1.5*Kd_c_ * Sq + Yr * Theta; //1.7
 
-      tau = checkTauLimits(tau);
+      // if (tau(4) - tau_prev_(4) > 1)
+      // {
+      //   tau(4) = tau_prev_(4) + 1;
+      // } else if (tau(4) - tau_prev_(4) < -1)
+      // {
+      //   tau(4) = tau_prev_(4) - 1;
+      // }
+      tau = checkDeltaTau(tau);
+      // tau = checkTauLimits(tau);
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;
@@ -467,6 +475,27 @@ namespace tum_ics_ur_robot_lli
       control_data_pub_.publish(msg);
 
       return tau;
+    }
+
+  Vector6d UR10EffortControl::checkDeltaTau(const Vector6d &tau)
+    {
+      Vector6d tau_new = tau;
+
+      for (int i = 0; i < STD_DOF; i++)
+      {
+        if (abs(tau_new(i) - tau_prev_(i)) > delta_tau_limits_(i))
+        {
+          if (tau_new(i) - tau_prev_(i) > 0)
+          {
+            tau_new(i) = tau_prev_(i) + delta_tau_limits_(i);
+          } else
+          {
+            tau_new(i) = tau_prev_(i) - delta_tau_limits_(i);
+          }
+          ROS_WARN_STREAM("jont " + std::to_string(i) + " exceed limits. " + std::to_string(tau(i)) + " -->"  + std::to_string(tau_new(i)));
+        }
+      }
+      return tau_new;
     }
 
     Vector6d UR10EffortControl::checkTauLimits(const Vector6d &tau)

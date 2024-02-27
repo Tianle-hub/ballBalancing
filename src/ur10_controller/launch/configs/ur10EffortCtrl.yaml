@@ -24,7 +24,8 @@ ur10_effort_ctrl:
     
   cartesian:
     #proportional
-    gains_p: [1, 1, 1, 10, 8, 2]
+    gains_p: [1, 1, 1, 20, 16, 12]
+    # gains_p: [1, 1, 1, 10, 8, 2]
     
     #derivative
     gains_d: [100, 75, 75, 73, 15, 5]

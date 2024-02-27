@@ -81,6 +81,7 @@ namespace BallControl
       bool initK();
 
       void pubState();
+      void pubModelState();
 
       void pubPlateAngel(const Eigen::Vector2d &u);
 
