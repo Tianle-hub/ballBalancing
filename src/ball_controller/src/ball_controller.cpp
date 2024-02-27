@@ -113,6 +113,9 @@ namespace BallControl
         pubBallTF();
 
         u_d_ = -0.8*K_ * x_; //0.7
+        
+        // u_d_ = pid();
+
         return u_d_;
 
         break;
@@ -124,6 +127,16 @@ namespace BallControl
     }
   }
 
+  Eigen::Vector2d BallController::pid()
+  {
+    Eigen::Vector2d x(x_(0), x_(2));
+    Eigen::Vector2d x_prev(x_prev_(0), x_prev_(2));
+    Eigen::Vector2d u = -0.8*kp_ * x - 0.8*kd_ * (x - x_prev)/0.002;
+    x_prev_ = x_;
+    // pid_fre_factor_ ++;
+    
+    return u;
+  }
 
   void BallController::pubBallTF()
   {
@@ -270,6 +283,49 @@ namespace BallControl
       }
     }
     ROS_WARN_STREAM("K: \n" << K_);
+
+    // D GAINS
+    ros::param::get(ns + "/Kd", vec);
+    if (vec.size() < 2)
+    {
+      ROS_ERROR_STREAM("kd : wrong number of dimensions:" << vec.size());
+      return false;
+    }
+    for (size_t i = 0; i < 2; i++)
+    {
+      kd_(i, i) = vec[i];
+    }
+    ROS_WARN_STREAM("Kd of joint space controller: \n" << kd_);
+
+    // P GAINS
+    ros::param::get(ns + "/Kp", vec);
+    if (vec.size() < 2)
+    {
+      ROS_ERROR_STREAM("kp : wrong number of dimensions:" << vec.size());
+      return false;
+    }
+    for (size_t i = 0; i < 2; i++)
+    {
+      kp_(i, i) = vec[i];
+    }
+    ROS_WARN_STREAM("Kp of joint space controller: \n" << kp_);
+
+    // I GAINS
+    ros::param::get(ns + "/Ki", vec);
+    if (vec.size() < 2)
+    {
+      ROS_ERROR_STREAM("Ki : wrong number of dimensions:" << vec.size());
+      return false;
+    }
+    for (size_t i = 0; i < 2; i++)
+    {
+      ki_(i, i) = vec[i];
+    }
+    ROS_WARN_STREAM("Ki of joint space controller: \n" << ki_);
+
+    pid_fre_factor_ = 0;
+
+    x_prev_ << 0, 0, 0, 0;
 
     return true;
   }

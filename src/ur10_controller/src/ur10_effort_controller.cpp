@@ -492,7 +492,7 @@ namespace tum_ics_ur_robot_lli
           {
             tau_new(i) = tau_prev_(i) - delta_tau_limits_(i);
           }
-          ROS_WARN_STREAM("jont " + std::to_string(i) + " exceed limits. " + std::to_string(tau(i)) + " -->"  + std::to_string(tau_new(i)));
+          // ROS_WARN_STREAM("jont " + std::to_string(i) + " exceed limits. " + std::to_string(tau(i)) + " -->"  + std::to_string(tau_new(i)));
         }
       }
       return tau_new;
