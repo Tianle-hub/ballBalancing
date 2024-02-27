@@ -3,6 +3,7 @@
 #include <chrono>
 #include <ur10_controller/state_action.h>
 
+
 namespace tum_ics_ur_robot_lli
 {
   namespace RobotControllers
@@ -24,15 +25,17 @@ namespace tum_ics_ur_robot_lli
       delta_qp_(Vector6d::Zero())
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
+      Reward_data_pub_ = nh_.advertise<std_msgs::Float64>("return", 100);
       model_.initModel();
 
       // fake ball setting 
-      ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
+      // ball_controller.init(Vector4d(0.2, 0., 0.2, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
       
       // will it return call back
       // real ball setting
-      // ball_controller.init(BallControl::BallType::CAMERA);  // MODEL CAMERA
-      delta_tau_limits_ << 2.0, 2.0, 0.5, 1.0, 0.5, 0.5;
+      ball_controller.init(BallControl::BallType::CAMERA);  // MODEL CAMERA
+      // delta_tau_limits_ << 2.0, 2.0, 0.5, 1.0, 0.5, 0.5;
+      delta_tau_limits_ << 0.2, 0.2, 0.05, 0.1, 0.05, 0.05;
     }
 
     UR10EffortControl::~UR10EffortControl()
@@ -250,12 +253,13 @@ namespace tum_ics_ur_robot_lli
         // double roll = EE_pos_r(2);  //Axis 0: Rotation around the X-axis (roll)
 
         q_learning::inner_counter++;
-        if (q_learning::inner_counter == q_learning::learning_freq*100) q_learning::inner_counter = 0;
+
+        // if (q_learning::inner_counter == q_learning::learning_freq*100) q_learning::inner_counter = 0;
 
         if (q_learning::inner_counter % q_learning::learning_freq){
             
-            ROS_INFO("q learning step");
-            q_learning::new_action = true;
+            // ROS_INFO("q learning step");
+            
 
             // TODO: discretize ball position
             // Eigen::Vector2d discretized_ball_pos = q_learning::encodeBallStateGrid(x_ball, q_learning::num_ball_grid, -q_learning::ball_range, q_learning::ball_range);
@@ -304,8 +308,12 @@ namespace tum_ics_ur_robot_lli
 
             // epsilon greedy policy
             q_learning::action = q_learning::chooseAction(q_learning::currentState, q_learning::Q, q_learning::epsilon); // a(t)
-            // q_learning::delta_robot_rotate = q_learning::action2plateAngle(q_learning::action);
-            q_learning::action2plateAngleAbsolute(q_learning::action);
+            q_learning::new_action = true;
+            // give desired error of plate
+            q_learning::delta_robot_rotate = q_learning::action2plateAngle(q_learning::action);
+            
+            // send directly plate desired angle
+            // q_learning::action2plateAngleAbsolute(q_learning::action);
 
             // if(q_learning::step>=q_learning::maxSteps || q_learning::done)
             // {
@@ -321,11 +329,17 @@ namespace tum_ics_ur_robot_lli
                 // q_learning::done = false;
                 q_learning::epsilon *=0.99;
                 q_learning::episode++;
-                ROS_INFO_STREAM("episode:  "<<q_learning::episode);
+                ROS_INFO_STREAM("Episode:  "<<q_learning::episode);
                 ROS_INFO_STREAM("Reward:  "<<q_learning::Reward);
+
+                return_msg.data = q_learning::Reward;
+                Reward_data_pub_.publish(return_msg);
                 int zeros = (q_learning::Q.array() == 0).count();
                 ROS_INFO_STREAM("Not explored Q table:  "<<zeros);
-                q_learning::randomEpisodePlate();
+                ROS_INFO_STREAM("epsilon: "<<q_learning::epsilon);
+
+                // if (q_learning::episode<=q_learning::numEpisodes)
+                //     q_learning::randomEpisodePlate();
                 q_learning::Reward = 0;
             }
         } // learning inner loop
@@ -344,12 +358,13 @@ namespace tum_ics_ur_robot_lli
         if (q_learning::new_action && q_learning::Q_init) // new action from inner Q learning loop
         {
             // new action from q learning update
-            q_learning::plate_x_delta_onestep = q_learning::delta_robot_rotate(0)/q_learning::learning_freq;
-            q_learning::plate_y_delta_onestep = q_learning::delta_robot_rotate(1)/q_learning::learning_freq;
+            q_learning::plate_x_delta_onestep = q_learning::delta_robot_rotate(0)/double(q_learning::learning_freq);
+            q_learning::plate_y_delta_onestep = q_learning::delta_robot_rotate(1)/double(q_learning::learning_freq);
+            ROS_INFO_STREAM("plate_xy_delta_onestep"<<q_learning::plate_x_delta_onestep<<", "<<q_learning::plate_y_delta_onestep);
             q_learning::new_action = false;
         }
-        // q_learning::plate_angle(0) += q_learning::plate_x_delta_onestep;
-        // q_learning::plate_angle(1) += q_learning::plate_y_delta_onestep;
+        q_learning::plate_angle(0) += q_learning::plate_x_delta_onestep;
+        q_learning::plate_angle(1) += q_learning::plate_y_delta_onestep;
 
 
         // execute the action by q learning
@@ -360,7 +375,7 @@ namespace tum_ics_ur_robot_lli
         Matrix3d x_goal_r = (Eigen::AngleAxisd(-M_PI/2, Vector3d::UnitZ()) * Eigen::AngleAxisd(q_learning::plate_angle(0), Vector3d::UnitY()) * Eigen::AngleAxisd(q_learning::plate_angle(1), Vector3d::UnitX())).toRotationMatrix();
         
         // ROS_INFO_STREAM("onestep x y:  "<< q_learning::plate_x_delta_onestep << ","<< q_learning::plate_y_delta_onestep );
-        ROS_INFO_STREAM("Plate Command:\n"<<q_learning::plate_angle);
+        // ROS_INFO_STREAM("Plate Command:\n"<<q_learning::plate_angle);
         Vector3d x_goal_t = working_position_;
         // x_goal_t(2) = x_goal_t(2) - (time.tD()-10.)*0.05;  //move along z-axis?
 
@@ -451,7 +466,7 @@ namespace tum_ics_ur_robot_lli
           {
             tau_new(i) = tau_prev_(i) - delta_tau_limits_(i);
           }
-          ROS_WARN_STREAM("jont " + std::to_string(i) + " exceed limits. " + std::to_string(tau(i)) + " -->"  + std::to_string(tau_new(i)));
+          // ROS_WARN_STREAM("jont " + std::to_string(i) + " exceed limits. " + std::to_string(tau(i)) + " -->"  + std::to_string(tau_new(i)));
         }
       }
       return tau_new;
@@ -574,8 +589,8 @@ namespace tum_ics_ur_robot_lli
       
       // Sq(3) = -Sq(3);
 
-      Vector6d tau = - 1.7*Kd_c_ * Sq + Yr * Theta;
-      tau = checkDeltaTau(tau);
+      Vector6d tau = - 1.0*Kd_c_ * Sq + Yr * Theta;
+      // tau = checkDeltaTau(tau);
 
       // publish the ControlData (only for debugging)
       tum_ics_ur_robot_msgs::ControlData msg;

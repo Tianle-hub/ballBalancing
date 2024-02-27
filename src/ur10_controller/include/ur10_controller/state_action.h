@@ -11,7 +11,7 @@
 namespace q_learning
 {
     int inner_counter = 0;
-    int learning_freq = 20;
+    int learning_freq = 10;
     double plate_x_delta_onestep = 0;
     double plate_y_delta_onestep = 0;
     // Variables for Q learning
@@ -23,8 +23,8 @@ namespace q_learning
     double robot_rotation_range = 0.06;  // rotation maximum angle in radian
     int num_ball_grid = 20;
     int num_ball_polar_theta = 8;
-    int num_ball_polar_radius = 5;
-    int num_robot = 8;
+    int num_ball_polar_radius = 4;
+    int num_robot = 4;
     double unit_robot_rotate = robot_rotation_range/double(num_robot);
     int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
     int num_action = 9;
@@ -60,7 +60,7 @@ namespace q_learning
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis(-robot_rotation_range, robot_rotation_range);
+        std::uniform_real_distribution<> dis(-robot_rotation_range*0.5, robot_rotation_range*0.5);
         plate_angle << dis(gen), dis(gen);
         ROS_INFO_STREAM("Init plate_angle \n"<<plate_angle);
     }
