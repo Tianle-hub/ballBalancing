@@ -158,7 +158,7 @@ namespace BallControl
       return false;
     } else
     {
-      Kx_ = P_ * Hx_.transpose() * (Hx_ * P_ * Hx_.transpose() + Rx_.transpose()).inverse();
+      Kx_ = P_ * Hx_.transpose() * (Hx_ * P_ * Hx_.transpose()).inverse();
       x_ = (I_ - Kx_ * Hx_) * x_ + Kx_ * zx;
       P_ = (I_ - Kx_ * Hx_) * P_;
       return true;
