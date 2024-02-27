@@ -11,7 +11,7 @@
 namespace q_learning
 {
     int inner_counter = 0;
-    int learning_freq = 10;
+    int learning_freq = 20;
     double plate_x_delta_onestep = 0;
     double plate_y_delta_onestep = 0;
     // Variables for Q learning
@@ -43,6 +43,7 @@ namespace q_learning
     int action;
     bool done;
     double reward = 0;
+    double Reward;
 
     const double alpha = 0.1; // Learning rate
     const double gamma = 0.99; // Discount factor
@@ -53,7 +54,7 @@ namespace q_learning
     Eigen::Vector4d encodeBallPosVeloPolar(Eigen::Vector4d &x_ball, int angle_size, int dis_size, double minCoord, double maxCoord);
     Eigen::Vector2d encodeEndeffectorState(Eigen::Vector2d &EE_pos_r, int size);
     int discretizeCoordinate(double coordinate, int size, double minCoord, double maxCoord);
-    
+    void action2plateAngleAbsolute(int action);
 
     void randomEpisodePlate()
     {
@@ -87,11 +88,13 @@ namespace q_learning
         int encodedEEx = discretized_EE_euler(0);
         int encodedEEy = discretized_EE_euler(1);
 
-        if (encodedBallPosDis == 0 && VeloRadius<0.03){
+        if (encodedBallPosDis == 0 
+            && (encodedEEx<=num_robot/2+1 || encodedEEx>=num_robot/2-1) 
+            && (encodedEEy<=num_robot/2+1 || encodedEEy>=num_robot/2-1) ){
             reward = 100; 
             done = true;
         }
-        else if (encodedBallPosDis == 0 && VeloRadius>0.03) reward = 1;
+        else if (encodedBallPosDis == 0) reward = 1;
         else if (encodedBallPosDis == 1) reward = -1;
         else if (encodedBallPosDis == 2) reward = -2;
         else if (encodedBallPosDis == 3) reward = -4;  // check whether not exceed
@@ -182,6 +185,65 @@ namespace q_learning
         // else if (plate_angle(1) <= -robot_rotation_range) plate_angle(1) = -robot_rotation_range;
 
     return delta;
+    }
+
+
+    void action2plateAngleAbsolute(int action){
+        if (action == 0){
+            // stay still
+            plate_angle(0) += 0;
+            plate_angle(1) += 0;
+        }
+        else if (action == 1){
+            // up
+            plate_angle(0) -= unit_robot_rotate;
+            plate_angle(1) += 0;
+        }
+        else if (action == 2){
+            // up right
+            plate_angle(0) -= unit_robot_rotate;
+            plate_angle(1) += unit_robot_rotate;
+        }
+        else if (action == 3){
+            // right
+            plate_angle(0)+= 0;
+            plate_angle(1)+= unit_robot_rotate;
+        }
+        else if (action == 4){
+            // down right
+            plate_angle(0)+= unit_robot_rotate;
+            plate_angle(1)+= unit_robot_rotate;
+        }
+        else if (action == 5){
+            // down 
+            plate_angle(0)+= unit_robot_rotate;
+            plate_angle(1)+= 0;
+        }
+        else if (action == 6){
+            // down left
+            plate_angle(0)+= unit_robot_rotate;
+            plate_angle(1)-= unit_robot_rotate;
+        }
+        else if (action == 7){
+            // left 
+            plate_angle(0)+= 0;
+            plate_angle(1)-= unit_robot_rotate;
+        }
+        else if (action == 8){
+            // up left
+            plate_angle(0)-= unit_robot_rotate;
+            plate_angle(1)-= unit_robot_rotate;
+        }
+        // if (plate_angle(0) >= robot_rotation_range) delta(0) = 0;
+        // else if (plate_angle(0) <= -robot_rotation_range) delta(0) = 0;
+        // else if (plate_angle(1) >= robot_rotation_range) delta(1) = 0;
+        // else if (plate_angle(1) <= -robot_rotation_range) delta(1) = 0;
+
+        if (plate_angle(0) >= robot_rotation_range) plate_angle(0) = robot_rotation_range;
+        else if (plate_angle(0) <= -robot_rotation_range) plate_angle(0) = -robot_rotation_range;
+        else if (plate_angle(1) >= robot_rotation_range) plate_angle(1) = robot_rotation_range;
+        else if (plate_angle(1) <= -robot_rotation_range) plate_angle(1) = -robot_rotation_range;
+
     }
 
     void updateQ(Eigen::MatrixXd &Q, int state, int action, double reward, int nextState) {

@@ -54,8 +54,9 @@ namespace tum_ics_ur_robot_lli
 
       BallControl::BallController ball_controller;
 
-
-
+      Vector6d tau_limits_;
+      Vector6d delta_tau_limits_;
+      Vector6d tau_prev_;
       
       
       // std::random_device rd;
@@ -94,7 +95,7 @@ namespace tum_ics_ur_robot_lli
 
       Vector4d updateBallController(const double &time, const JointState &state);
 
-      
+      Vector6d checkDeltaTau(const Vector6d &tau);
     };
 
   } // namespace RobotControllers
