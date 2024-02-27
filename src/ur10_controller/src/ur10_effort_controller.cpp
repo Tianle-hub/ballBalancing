@@ -26,8 +26,8 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("simple_effort_controller_data", 1);
       model_.initModel();
-      ball_controller.init(Vector4d(0.25, 0., 0.25, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
-      // ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
+      // ball_controller.init(Vector4d(0.25, 0., 0.25, 0.), BallControl::BallType::MODEL);  // init_state, init_velocity
+      ball_controller.init(BallControl::BallType::CAMERA);  // init_state, init_velocity / init angle 
       delta_tau_limits_ << 2.0, 2.0, 0.5, 1.0, 0.5, 0.5;
     }
 
