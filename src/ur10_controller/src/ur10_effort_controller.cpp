@@ -276,8 +276,8 @@ namespace tum_ics_ur_robot_lli
             // ROS_INFO_STREAM("discretized_ball_pos_velo_polar \n"<<discretized_ball_pos_velo_polar);
 
             
-            
-            if(q_learning::Q_init)
+            /////////////////////////Update Q table and collect reward//////////////////
+            if(q_learning::Q_init && !q_learning::training_done)
             {
                 // ROS_INFO_STREAM("step:  "<<q_learning::step);
                 // s(t+1)
@@ -293,38 +293,37 @@ namespace tum_ics_ur_robot_lli
                 }  
                 q_learning::step++;      
             }
-
+            /////////////////////////Update Q table and collect reward//////////////////
             
-
-
             // TODO: get state index
             // encodedPosAngle: num_ball_polar_theta, encodedPosDis: num_ball_polar_radius
             // discretized_EE_euler_x: num_robot, discretized_EE_euler_y: num_robot
             
             // s(t)
-            if(q_learning::Q_init) q_learning::currentState = q_learning::nextState;
-            else q_learning::currentState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
-                                                    q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, q_learning::num_robot);
-
-            // epsilon greedy policy
-            q_learning::action = q_learning::chooseAction(q_learning::currentState, q_learning::Q, q_learning::epsilon); // a(t)
-            q_learning::new_action = true;
-            // give desired error of plate
-            q_learning::delta_robot_rotate = q_learning::action2plateAngle(q_learning::action);
-            
-            // send directly plate desired angle
-            // q_learning::action2plateAngleAbsolute(q_learning::action);
-
-            // if(q_learning::step>=q_learning::maxSteps || q_learning::done)
-            // {
-            //     q_learning::step = 0;
-            //     q_learning::done = false;
-            //     q_learning::epsilon *=0.99;
-            //     q_learning::episode++;
-            // }
-
-            if(q_learning::step>=q_learning::maxSteps)
+            if(q_learning::step<=q_learning::maxSteps && !q_learning::training_done)
             {
+                if(q_learning::Q_init) q_learning::currentState = q_learning::nextState;
+                else q_learning::currentState = q_learning::getState(discretized_ball_pos_velo_polar, discretized_EE_euler, 
+                                                        q_learning::num_ball_polar_theta, q_learning::num_ball_polar_radius, q_learning::num_robot);
+
+                // epsilon greedy policy
+                q_learning::action = q_learning::chooseAction(q_learning::currentState, q_learning::Q, q_learning::epsilon); // a(t)
+                q_learning::new_action = true;
+                // give desired error of plate
+                q_learning::delta_robot_rotate = q_learning::action2plateAngle(q_learning::action);
+                
+                // send directly plate desired angle
+                // q_learning::action2plateAngleAbsolute(q_learning::action);
+
+                // if(q_learning::step>=q_learning::maxSteps || q_learning::done)
+                // {
+                //     q_learning::step = 0;
+                //     q_learning::done = false;
+                //     q_learning::epsilon *=0.99;
+                //     q_learning::episode++;
+                // }
+            }
+            else{
                 q_learning::step = 0;
                 // q_learning::done = false;
                 q_learning::epsilon *=0.99;
@@ -338,10 +337,17 @@ namespace tum_ics_ur_robot_lli
                 ROS_INFO_STREAM("Not explored Q table:  "<<zeros);
                 ROS_INFO_STREAM("epsilon: "<<q_learning::epsilon);
 
-                // if (q_learning::episode<=q_learning::numEpisodes)
-                //     q_learning::randomEpisodePlate();
+                if (q_learning::episode<=q_learning::numEpisodes){
+                    q_learning::delta_robot_rotate = q_learning::randomEpisodePlate();
+                    q_learning::desired_plate_angle = q_learning::plate_angle + q_learning::delta_robot_rotate;
+                    q_learning::new_action = true;
+                }
+                    
+                else q_learning::training_done = true;
                 q_learning::Reward = 0;
             }
+
+
         } // learning inner loop
         
 
@@ -360,11 +366,26 @@ namespace tum_ics_ur_robot_lli
             // new action from q learning update
             q_learning::plate_x_delta_onestep = q_learning::delta_robot_rotate(0)/double(q_learning::learning_freq);
             q_learning::plate_y_delta_onestep = q_learning::delta_robot_rotate(1)/double(q_learning::learning_freq);
-            ROS_INFO_STREAM("plate_xy_delta_onestep"<<q_learning::plate_x_delta_onestep<<", "<<q_learning::plate_y_delta_onestep);
+            // ROS_INFO_STREAM("plate_xy_delta_onestep"<<q_learning::plate_x_delta_onestep<<", "<<q_learning::plate_y_delta_onestep);
             q_learning::new_action = false;
+            q_learning::plate_x_limit = false;
+            q_learning::plate_y_limit = false;
         }
-        q_learning::plate_angle(0) += q_learning::plate_x_delta_onestep;
-        q_learning::plate_angle(1) += q_learning::plate_y_delta_onestep;
+
+        
+
+        if (abs(q_learning::desired_plate_angle(0)-q_learning::plate_angle(0))>q_learning::plate_x_delta_onestep && !q_learning::plate_x_limit)
+            q_learning::plate_angle(0) += q_learning::plate_x_delta_onestep;
+        else 
+            q_learning::plate_x_limit = true;
+
+
+        if (abs(q_learning::desired_plate_angle(1)-q_learning::plate_angle(1))>q_learning::plate_y_delta_onestep && !q_learning::plate_y_limit)
+            q_learning::plate_angle(1) += q_learning::plate_y_delta_onestep;
+        else 
+            q_learning::plate_y_limit = true;
+
+
 
 
         // execute the action by q learning

@@ -16,6 +16,7 @@ namespace q_learning
     double plate_y_delta_onestep = 0;
     // Variables for Q learning
     Eigen::Vector2d plate_angle = Eigen::Vector2d::Zero();
+    Eigen::Vector2d desired_plate_angle = Eigen::Vector2d::Zero();
     // Eigen::Vector2d last_plate_angle = Eigen::Vector2d::Zero();
 
 
@@ -23,7 +24,7 @@ namespace q_learning
     double robot_rotation_range = 0.06;  // rotation maximum angle in radian
     int num_ball_grid = 20;
     int num_ball_polar_theta = 8;
-    int num_ball_polar_radius = 4;
+    int num_ball_polar_radius = 8;
     int num_robot = 4;
     double unit_robot_rotate = robot_rotation_range/double(num_robot);
     int num_state = num_robot*num_robot*num_ball_polar_theta*num_ball_polar_radius;
@@ -31,7 +32,8 @@ namespace q_learning
     Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(num_state, num_action);
     Eigen::Vector2d delta_robot_rotate;
     bool new_action = false;
-
+    bool plate_x_limit = false;
+    bool plate_y_limit = false;
 
     bool Q_init = false;
     const int numEpisodes = 1000; // Total number of episodes to run
@@ -42,6 +44,7 @@ namespace q_learning
     int nextState;
     int action;
     bool done;
+    bool training_done=false;
     double reward = 0;
     double Reward;
 
@@ -56,14 +59,28 @@ namespace q_learning
     int discretizeCoordinate(double coordinate, int size, double minCoord, double maxCoord);
     void action2plateAngleAbsolute(int action);
 
-    void randomEpisodePlate()
+    Eigen::Vector2d randomEpisodePlate()
     {
+        Eigen::Vector2d previous_plate_angle = plate_angle;
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<> dis(-robot_rotation_range*0.5, robot_rotation_range*0.5);
-        plate_angle << dis(gen), dis(gen);
+        Eigen::Vector2d current_plate_angle;
+        current_plate_angle<< dis(gen), dis(gen);
         ROS_INFO_STREAM("Init plate_angle \n"<<plate_angle);
+        Eigen::Vector2d delta_random_plate;
+        delta_random_plate<< current_plate_angle(0) - previous_plate_angle(0), current_plate_angle(1) - previous_plate_angle(1);
+        return delta_random_plate;
     }
+
+    // void randomEpisodePlateDelta()
+    // {
+    //     std::random_device rd;
+    //     std::mt19937 gen(rd());
+    //     std::uniform_real_distribution<> dis(-robot_rotation_range*0.5, robot_rotation_range*0.5);
+    //     plate_angle << dis(gen), dis(gen);
+    //     ROS_INFO_STREAM("Init plate_angle \n"<<plate_angle);
+    // }
 
 
     int getState(Eigen::Vector4d &discretized_ball_pos_velo_polar,
@@ -98,6 +115,7 @@ namespace q_learning
         else if (encodedBallPosDis == 1) reward = -1;
         else if (encodedBallPosDis == 2) reward = -2;
         else if (encodedBallPosDis == 3) reward = -4;  // check whether not exceed
+        else if (encodedBallPosDis == 4) reward = -8;  // check whether not exceed
         else reward = -10;
 
         return reward;
@@ -183,8 +201,8 @@ namespace q_learning
         // else if (plate_angle(0) <= -robot_rotation_range) plate_angle(0) = -robot_rotation_range;
         // else if (plate_angle(1) >= robot_rotation_range) plate_angle(1) = robot_rotation_range;
         // else if (plate_angle(1) <= -robot_rotation_range) plate_angle(1) = -robot_rotation_range;
-
-    return delta;
+        desired_plate_angle<<plate_angle(0)+delta(0), plate_angle(1)+delta(1);
+        return delta;
     }
 
 
