@@ -26,6 +26,8 @@ namespace BallControl
         private:
 
         void x_d_Callback(const geometry_msgs::Point x_d);
+         
+        void circle(const double &t);
     };
 }
 

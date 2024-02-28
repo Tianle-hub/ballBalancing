@@ -14,9 +14,23 @@ namespace BallControl
     }
 
     Eigen::Vector4d TrajPlanner::update(const double &time)
-    {
+    {   
+        if (time > 40)
+        {
+            circle(time);
+        }
         return x_d_;
     }
+
+    void TrajPlanner::circle(const double &t)
+    {
+        double w = M_PI_4;
+        x_d_(0) = 0.1 * cos(w * t);
+        x_d_(1) = -0.1 * w * sin(w * t); 
+        x_d_(2) = 0.1 * sin(w * t);
+        x_d_(3) = 0.1 * w * cos(w * t);
+    }
+    
 
     void TrajPlanner::x_d_Callback(const geometry_msgs::Point x_d)
     {

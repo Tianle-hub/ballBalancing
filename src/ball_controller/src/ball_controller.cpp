@@ -116,7 +116,7 @@ namespace BallControl
         u_d_ = -0.9*K_ * (x_ - traj_planner_.update(time)); //0.7
         // u_d_ = pid();
 
-        ROS_INFO_STREAM_THROTTLE(1.0, "x_d : " << traj_planner_.update(time).transpose());
+        // ROS_INFO_STREAM_THROTTLE(1.0, "x_d : " << traj_planner_.update(time).transpose());
 
         return u_d_;
 
