@@ -4,6 +4,8 @@
 #include <Eigen/Dense>
 #include <ros/ros.h>
 #include <geometry_msgs/Point.h>
+#include <std_msgs/Bool.h>
+
 
 namespace BallControl
 {
@@ -16,6 +18,10 @@ namespace BallControl
 
         ros::Subscriber position_desired_sub_;
 
+        ros::Subscriber circle_sub_;
+
+        bool circle_;
+
         public:
         TrajPlanner();
 
@@ -26,6 +32,8 @@ namespace BallControl
         private:
 
         void x_d_Callback(const geometry_msgs::Point x_d);
+
+        void circle_Callback(const std_msgs::Bool circle);
          
         void circle(const double &t);
     };
