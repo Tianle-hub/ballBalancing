@@ -3,9 +3,11 @@
 namespace BallControl
 {
     TrajPlanner::TrajPlanner():
-    x_d_(Eigen::Vector4d::Zero())
+    x_d_(Eigen::Vector4d::Zero()),
+    circle_(false)
     {
         position_desired_sub_ = nh_.subscribe("ball_position_desired", 1000, &TrajPlanner::x_d_Callback, this);
+        circle_sub_ = nh_.subscribe("ball_circle", 1000, &TrajPlanner::circle_Callback, this);
     }
 
     TrajPlanner::~TrajPlanner()
@@ -15,7 +17,7 @@ namespace BallControl
 
     Eigen::Vector4d TrajPlanner::update(const double &time)
     {   
-        if (time > 40)
+        if (circle_)
         {
             circle(time);
         }
@@ -30,12 +32,16 @@ namespace BallControl
         x_d_(2) = 0.1 * sin(w * t);
         x_d_(3) = 0.1 * w * cos(w * t);
     }
-    
 
     void TrajPlanner::x_d_Callback(const geometry_msgs::Point x_d)
     {
-    x_d_(0) = x_d.x;
-    x_d_(2) = x_d.y;
+        x_d_(0) = x_d.x;
+        x_d_(2) = x_d.y;
+    }
+
+    void TrajPlanner::circle_Callback(const std_msgs::Bool circle)
+    {
+        circle_ = circle.data;
     }
 }
 
