@@ -44,7 +44,6 @@ namespace BallControl
     acceleration_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_kalman", 1);
     angel_plate_pb_  = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_plate", 1);
     camera_sub_ = nh_.subscribe("ball_pos_vel", 1000, &BallController::ball_pos_vel_Callback, this);
-    position_desired_sub_ = nh_.subscribe("ball_position_desired", 1000, &BallController::x_d_Callback, this);
     return true;
   }
 
@@ -80,7 +79,6 @@ namespace BallControl
     acceleration_pb_ = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_kalman", 1);
     angel_plate_pb_  = nh_.advertise<geometry_msgs::Vector3Stamped>("ball_acceleration_plate", 1);
     camera_sub_ = nh_.subscribe("ball_pos_vel", 1000, &BallController::ball_pos_vel_Callback, this);
-    position_desired_sub_ = nh_.subscribe("ball_position_desired", 1000, &BallController::x_d_Callback, this);
 
     return true;
   }
@@ -115,8 +113,10 @@ namespace BallControl
         pubPlateAngel(u);
         pubBallTF();
 
-        u_d_ = -0.9*K_ * (x_ - Eigen::Vector4d(x_d_(0), 0, x_d_(1), 0)); //0.7
+        u_d_ = -0.9*K_ * (x_ - traj_planner_.update(time)); //0.7
         // u_d_ = pid();
+
+        ROS_INFO_STREAM_THROTTLE(1.0, "x_d : " << traj_planner_.update(time).transpose());
 
         return u_d_;
 
@@ -251,13 +251,6 @@ namespace BallControl
     }
 
   }
-
-  void BallController::x_d_Callback(const geometry_msgs::Point x_d)
-  {
-    x_d_(0) = x_d.x;
-    x_d_(1) = x_d.y;
-  }
-
 
   Eigen::Vector4d BallController::getState()
   {

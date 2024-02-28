@@ -137,6 +137,7 @@ add_library(my_ball_controller
   src/ball_model.cpp
   src/kalman_filter_cv.cpp
   src/kalman_filter_ca.cpp
+  src/ball_traj_planner.cpp
 )
 
 ## Add cmake target dependencies of the library

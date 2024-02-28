@@ -9,6 +9,7 @@
 #include "ball_controller/PosVel2D.h"
 #include <ball_controller/kalman_filter.h>
 #include <ball_controller/ball_model.h>
+#include <ball_controller/ball_traj_planner.h>
 
 namespace BallControl
 {
@@ -42,6 +43,8 @@ namespace BallControl
       Eigen::Matrix<double,2,4> K_;
 
       BallControl::BallModel ballModel_;
+
+      BallControl::TrajPlanner traj_planner_;
 
       BallControl::KalmanFilter KalmanFilter_;
 
@@ -87,8 +90,6 @@ namespace BallControl
       void pubBallTF();
 
       void ball_pos_vel_Callback(const ball_controller::PosVel2D ball_pos_vel);
-
-      void x_d_Callback(const geometry_msgs::Point x_d);
 
       bool initK();
 
