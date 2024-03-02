@@ -1,4 +1,10 @@
-./build.sh
+## Moving a ball on the plate 
+
+## Demo
+[![Watch the video](https://img.youtube.com/vi/xZprBYt4qMk/hqdefault.jpg)](https://www.youtube.com/watch?v=xZprBYt4qMk)
+
+## Build 
+./build.s
 
 ## Run 
 # run program in real, first
