@@ -4,7 +4,7 @@
 [![Watch the video](https://img.youtube.com/vi/xZprBYt4qMk/hqdefault.jpg)](https://www.youtube.com/watch?v=xZprBYt4qMk)
 
 ## Build 
-./build.s
+./build.sh
 
 ## Run 
 # run program in real, first
