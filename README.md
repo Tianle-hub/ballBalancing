@@ -2,7 +2,7 @@
 
 ## Demo
 # All in one
-[![Watch the video](https://img.youtube.com/vi/xZprBYt4qMk/hqdefault.jpg)](https://www.youtube.com/watch?v=xZprBYt4qMk)
+[![Watch the video](https://img.youtube.com/vi/xZprBYt4qMk/hqdefault.jpg)]([https://www.youtube.com/watch?v=xZprBYt4qMk](https://youtu.be/U_UmLxSDF0Y))
 
 # Balancing task
 [![Watch the video](https://img.youtube.com/vi/bcdiMBezo2M/hqdefault.jpg)](https://www.youtube.com/watch?v=bcdiMBezo2M)
